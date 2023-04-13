@@ -67,18 +67,19 @@ export abstract class AbstractLambdaApi<
   abstract createLambdaFunction(id: string, props: LambdaApiProps): IFunction;
 }
 
+type BaseAppProps = {
+  stages: string[];
+  projectRoot: string;
+} & StackProps;
+
 export abstract class BaseApp extends Stack {
   readonly stageName: string;
   readonly productionStageName: string;
-  constructor(
-    scope: Construct,
-    id: string,
-    stages: string[],
-    props: StackProps
-  ) {
+  readonly projectRoot: string;
+  constructor(scope: Construct, id: string, props: BaseAppProps) {
     const stageName = scope.node.tryGetContext("stage") || "beta";
 
-    const supportedStages = stages;
+    const supportedStages = props.stages;
 
     if (!supportedStages.includes(stageName)) {
       throw Error(`ALLOWED_STAGES does not include ${stageName}`);
@@ -86,6 +87,7 @@ export abstract class BaseApp extends Stack {
 
     super(scope, `${id}-${stageName}`, props);
     this.stageName = stageName;
+    this.projectRoot = props.projectRoot;
   }
 
   get IsProductionStage() {
