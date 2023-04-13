@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          cache-dependency-path: infrastructure/yarn.lock
+          cache-dependency-path: yarn.lock
           node-version: "16.x"
           cache: "yarn"
 
