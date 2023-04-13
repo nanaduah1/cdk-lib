@@ -1,0 +1,21 @@
+name: Run checks
+run-name: Test by @${{ github.actor }}
+on:
+  push:
+jobs:
+  run-checks:
+    runs-on: ubuntu-latest
+    name: Compile and Test
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          cache-dependency-path: infrastructure/yarn.lock
+          node-version: "16.x"
+          cache: "yarn"
+
+      - run: yarn install --frozen-lockfile
+        name: Instal dependencies
+
+      - run: yarn tsc --noEmit
+        name: Validate Syntax
