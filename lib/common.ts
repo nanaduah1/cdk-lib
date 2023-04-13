@@ -67,7 +67,7 @@ export abstract class AbstractLambdaApi<
   abstract createLambdaFunction(id: string, props: LambdaApiProps): IFunction;
 }
 
-type BaseAppProps = {
+export type BaseAppProps = {
   stages: string[];
   projectRoot: string;
 } & StackProps;
