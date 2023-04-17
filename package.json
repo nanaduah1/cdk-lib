@@ -2,6 +2,7 @@
   "name": "cdk-lib",
   "version": "0.1.0",
   "main": "lib/index.js",
+  "type": "module",
   "types": "lib/index.d.ts",
   "scripts": {
     "build": "tsc",
