@@ -17,5 +17,5 @@ jobs:
       - run: yarn install --frozen-lockfile
         name: Instal dependencies
 
-      - run: yarn tsc --noEmit
+      - run: yarn build
         name: Validate Syntax
