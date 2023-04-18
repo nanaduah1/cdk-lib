@@ -1,6 +1,16 @@
-import { Chain, State, TaskStateBase } from "aws-cdk-lib/aws-stepfunctions";
+import {
+  Chain,
+  IChainable,
+  State,
+  TaskStateBase,
+} from "aws-cdk-lib/aws-stepfunctions";
 
-type WorkflowDefinitionTask = State | TaskStateBase | Chain | undefined;
+type WorkflowDefinitionTask =
+  | State
+  | TaskStateBase
+  | Chain
+  | IChainable
+  | undefined;
 
 export class WorkflowDEfinition {
   static fromArray(states: WorkflowDefinitionTask[]) {
