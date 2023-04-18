@@ -1,6 +1,6 @@
-import * as apigatewayv2 from "@aws-cdk/aws-apigatewayv2-alpha";
-import * as authorizers from "@aws-cdk/aws-apigatewayv2-authorizers-alpha";
-import * as integrations from "@aws-cdk/aws-apigatewayv2-integrations-alpha";
-import * as lambdapython from "@aws-cdk/aws-lambda-python-alpha";
-
-export { apigatewayv2, authorizers, integrations, lambdapython };
+export * from "@aws-cdk/aws-apigatewayv2-alpha";
+export * from "@aws-cdk/aws-apigatewayv2-authorizers-alpha";
+export * from "@aws-cdk/aws-apigatewayv2-integrations-alpha";
+export * as aws_lambda_python from "@aws-cdk/aws-lambda-python-alpha";
+export * from "constructs";
+export * from "aws-cdk-lib";
