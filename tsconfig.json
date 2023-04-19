@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "commonjs",
+    "module": "ES2020",
     "lib": [
       "es2020"
     ],
     "declaration": true,
     "strict": true,
+    "esModuleInterop": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
     "noImplicitThis": true,
@@ -17,12 +18,14 @@
     "noFallthroughCasesInSwitch": false,
     "inlineSourceMap": true,
     "inlineSources": true,
+    "moduleResolution": "node16",
     "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "strictPropertyInitialization": false,
     "typeRoots": [
       "./node_modules/@types"
     ],
-    "outDir": "dist"
+    "outDir": "dist",
   },
   "exclude": [
     "node_modules",
