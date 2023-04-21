@@ -1,10 +1,13 @@
 import {
+  DomainName,
   HttpApi,
+  HttpApiProps,
   HttpMethod,
   HttpRoute,
   HttpRouteKey,
   IHttpRouteAuthorizer,
   PayloadFormatVersion,
+  SecurityPolicy,
 } from "@aws-cdk/aws-apigatewayv2-alpha";
 import { HttpLambdaIntegration } from "@aws-cdk/aws-apigatewayv2-integrations-alpha";
 import { IFunction, ILayerVersion, Runtime } from "aws-cdk-lib/aws-lambda";
@@ -13,6 +16,12 @@ import { PythonLambdaFunction } from "./python";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { CfnStage } from "aws-cdk-lib/aws-apigateway";
 import { ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import {
+  Certificate,
+  CertificateValidation,
+} from "aws-cdk-lib/aws-certificatemanager";
+import { ARecord, IHostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
+import { ApiGatewayv2DomainProperties } from "aws-cdk-lib/aws-route53-targets";
 
 interface PythonLambdaApiProps {
   layers?: ILayerVersion[] | undefined;
@@ -133,5 +142,66 @@ export class HttpApiLogs {
     };
 
     logGroup.grantWrite(new ServicePrincipal("apigateway.amazonaws.com"));
+  }
+}
+
+type HttpApiGatewayProps = {
+  domainName?: string;
+  mappingKey?: string;
+  hostedZone?: IHostedZone;
+  throttlingBurstLimit?: number;
+  throttlingRateLimit?: number;
+} & HttpApiProps;
+export class HttpApiGateway extends HttpApi {
+  constructor(scope: Construct, id: string, props: HttpApiGatewayProps) {
+    const {
+      domainName,
+      hostedZone,
+      mappingKey,
+      defaultDomainMapping,
+      throttlingBurstLimit,
+      throttlingRateLimit,
+      ...apiProps
+    } = props;
+
+    let domainMapping = defaultDomainMapping;
+    if (domainName && hostedZone) {
+      const [subdomain, ..._] = domainName.split(".");
+
+      const certificate = new Certificate(scope, `${id}-domain-certificate`, {
+        validation: CertificateValidation.fromDns(hostedZone),
+        domainName,
+      });
+
+      const domain = new DomainName(scope, `${id}-domain-name`, {
+        certificate,
+        domainName,
+        securityPolicy: SecurityPolicy.TLS_1_2,
+      });
+
+      new ARecord(scope, `${id}-aRecord`, {
+        zone: hostedZone,
+        recordName: subdomain,
+        target: RecordTarget.fromAlias(
+          new ApiGatewayv2DomainProperties(
+            domain.regionalDomainName,
+            domain.regionalHostedZoneId
+          )
+        ),
+      });
+
+      domainMapping = { domainName: domain, mappingKey };
+    }
+
+    super(scope, id, {
+      ...apiProps,
+      defaultDomainMapping: domainMapping,
+    });
+
+    const cnfStage = this.defaultStage?.node.defaultChild as CfnStage;
+    cnfStage.addPropertyOverride("DefaultRouteSettings", {
+      ThrottlingBurstLimit: throttlingBurstLimit ?? 100,
+      ThrottlingRateLimit: throttlingRateLimit ?? 100,
+    });
   }
 }
