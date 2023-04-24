@@ -16,7 +16,7 @@ export class DynamoTable extends Table {
   ) {
     super(scope, id, {
       removalPolicy,
-      billingMode: BillingMode.PROVISIONED,
+      billingMode: BillingMode.PAY_PER_REQUEST,
 
       partitionKey: {
         name: "pk",
@@ -28,15 +28,5 @@ export class DynamoTable extends Table {
       },
       stream: stream,
     });
-
-    this.autoScaleWriteCapacity({
-      maxCapacity: 10,
-      minCapacity: 1,
-    }).scaleOnUtilization({ targetUtilizationPercent: 80 });
-
-    this.autoScaleReadCapacity({
-      maxCapacity: 10,
-      minCapacity: 1,
-    }).scaleOnUtilization({ targetUtilizationPercent: 80 });
   }
 }
