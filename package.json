@@ -1,6 +1,6 @@
 {
   "name": "@forkintech/cdk-constructs",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
   "scripts": {
