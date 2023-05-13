@@ -1,5 +1,5 @@
 {
-  "name": "forkintech/cdk-lib",
+  "name": "@forkintech/cdk-constructs",
   "version": "0.1.10",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
