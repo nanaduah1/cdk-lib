@@ -1,6 +1,6 @@
 {
-  "name": "@nanaduah1/cdk-lib",
-  "version": "0.1.6",
+  "name": "@fast-ninjas/cdk-constructs",
+  "version": "0.1.13",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
   "scripts": {
@@ -24,7 +24,7 @@
     "constructs": "^10.2.0"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://registry.npmjs.org"
   },
   "repository": {
     "url": "https://github.com/nanaduah1/cdk-lib"
