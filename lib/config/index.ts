@@ -1,4 +1,3 @@
-import { ITable } from "aws-cdk-lib/aws-dynamodb";
 import {
   DynamoDBClient,
   GetItemCommand,
@@ -6,17 +5,17 @@ import {
 } from "@aws-sdk/client-dynamodb";
 
 export class Config {
-  private readonly table: ITable;
+  private readonly tableName: string;
   private readonly app: string;
   private readonly dynamodb: DynamoDBClient;
   private readonly stageName: string;
   constructor(
     app: string,
     stageName: string,
-    table: ITable,
+    tableName: string,
     region: string = "us-east-1"
   ) {
-    this.table = table;
+    this.tableName = tableName;
     this.app = app;
     this.stageName = stageName;
     this.dynamodb = new DynamoDBClient({ region, apiVersion: "2012-08-10" });
@@ -53,7 +52,7 @@ export class Config {
   private async getValue(key: string, stage: string = "") {
     const pk = stage ? `${this.app}#${stage}` : this.app;
     const getCommand = new GetItemCommand({
-      TableName: this.table.tableName,
+      TableName: this.tableName,
       Key: {
         pk: { S: pk.toUpperCase() },
         sk: { S: key },
@@ -67,7 +66,7 @@ export class Config {
   private async setValue(key: string, value: string, stage: string = "") {
     const pk = stage ? `${this.app}#${stage}` : this.app;
     const setCommand = new PutItemCommand({
-      TableName: this.table.tableName,
+      TableName: this.tableName,
       Item: {
         pk: { S: pk.toUpperCase() },
         sk: { S: key },
