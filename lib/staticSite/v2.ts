@@ -21,6 +21,8 @@ import { Construct } from "constructs";
 import { Function, FunctionCode } from "aws-cdk-lib/aws-cloudfront";
 import fs = require("fs");
 import path = require("path");
+import { BucketDeployment, Source } from "aws-cdk-lib/aws-s3-deployment";
+import { RetentionDays } from "aws-cdk-lib/aws-logs";
 
 type StaticWebsiteV2Props = {
   configFileName?: string;
@@ -103,6 +105,14 @@ export class StaticWebsiteV2 extends Construct {
       additionalBehaviors,
       domainNames: [options.siteDomainName],
       certificate: domainCertificate,
+    });
+
+    new BucketDeployment(this, "DeployWithInvalidation", {
+      sources: [Source.asset(options.assetRootDir)],
+      destinationBucket: s3Bucket,
+      distribution,
+      logRetention: RetentionDays.ONE_DAY,
+      prune: true,
     });
 
     new ARecord(this, "SiteRecord", {
