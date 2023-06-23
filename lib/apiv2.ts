@@ -25,7 +25,7 @@ import { ApiGatewayv2DomainProperties } from "aws-cdk-lib/aws-route53-targets";
 import { Duration } from "aws-cdk-lib";
 
 interface PythonLambdaApiProps {
-  timeout: Duration | undefined;
+  timeout?: Duration | undefined;
   layers?: ILayerVersion[] | undefined;
   handlerFileName?: string;
   authorizationScopes?: string[] | undefined;
