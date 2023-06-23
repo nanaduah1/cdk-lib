@@ -22,8 +22,10 @@ import {
 } from "aws-cdk-lib/aws-certificatemanager";
 import { ARecord, IHostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { ApiGatewayv2DomainProperties } from "aws-cdk-lib/aws-route53-targets";
+import { Duration } from "aws-cdk-lib";
 
 interface PythonLambdaApiProps {
+  timeout: Duration | undefined;
   layers?: ILayerVersion[] | undefined;
   handlerFileName?: string;
   authorizationScopes?: string[] | undefined;
@@ -56,6 +58,7 @@ export class PythonLambdaApiV2 extends Construct {
       functionRootFolder: props.functionRootFolder,
       layers: props.layers,
       assetExcludes: props.assetExcludes,
+      timeout: props.timeout,
     });
 
     new LambdaAsHttApi(this, "api", {
