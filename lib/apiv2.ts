@@ -41,6 +41,7 @@ interface PythonLambdaApiProps {
   apiGateway: HttpApi;
   displayName: string;
   assetExcludes?: string[];
+  memorySize?: number;
 }
 
 export class PythonLambdaApiV2 extends Construct {
@@ -59,6 +60,7 @@ export class PythonLambdaApiV2 extends Construct {
       layers: props.layers,
       assetExcludes: props.assetExcludes,
       timeout: props.timeout,
+      memorySize: props.memorySize,
     });
 
     new LambdaAsHttApi(this, "api", {

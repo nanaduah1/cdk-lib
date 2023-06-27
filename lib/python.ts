@@ -27,6 +27,8 @@ export class PythonLambdaApi extends AbstractLambdaApi<PythonLambdaApiProps> {
       hasDependencies: props.hasDependencies,
       layers: props.layers,
       assetExcludes: props.assetExcludes,
+      timeout: props.timeout,
+      memorySize: props.memorySize,
     });
   }
 }

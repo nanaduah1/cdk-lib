@@ -4,7 +4,7 @@ import {
   IHttpRouteAuthorizer,
 } from "@aws-cdk/aws-apigatewayv2-alpha";
 import { HttpLambdaIntegration } from "@aws-cdk/aws-apigatewayv2-integrations-alpha";
-import { CfnOutput, Stack, StackProps } from "aws-cdk-lib";
+import { CfnOutput, Duration, Stack, StackProps } from "aws-cdk-lib";
 import { Runtime, IFunction } from "aws-cdk-lib/aws-lambda";
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
@@ -23,6 +23,8 @@ export interface LambdaApiProps {
   apiGateway: HttpApi;
   displayName: string;
   assetExcludes?: string[];
+  timeout?: Duration;
+  memorySize?: number;
 }
 
 // Defines an abstract base class for creating LambdaApi constructs
