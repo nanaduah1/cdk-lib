@@ -1,4 +1,4 @@
-import { CfnOutput, Duration, RemovalPolicy } from "aws-cdk-lib";
+import { CfnOutput, Duration, RemovalPolicy, Stack } from "aws-cdk-lib";
 import {
   Certificate,
   CertificateValidation,
@@ -177,7 +177,9 @@ export class StaticWebsiteV2 extends Construct {
           new PolicyStatement({
             actions: ["cloudfront:CreateInvalidation"],
             resources: [
-              `arn:aws:cloudfront:::distribution/${distribution.distributionId}`,
+              `arn:aws:cloudfront::${Stack.of(this).account}:distribution/${
+                distribution.distributionId
+              }`,
             ],
           }),
         ],
