@@ -166,6 +166,7 @@ export class StaticWebsiteV2 extends Construct {
           },
         },
       },
+      physicalResourceId: PhysicalResourceId.of(new Date().toISOString()),
     };
     const cacheInvalidator = new AwsCustomResource(this, "CacheInvalidator", {
       logRetention: RetentionDays.ONE_DAY,
