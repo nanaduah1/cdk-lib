@@ -23,6 +23,11 @@ import fs = require("fs");
 import path = require("path");
 import { BucketDeployment, Source } from "aws-cdk-lib/aws-s3-deployment";
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
+import {
+  AwsCustomResource,
+  AwsSdkCall,
+  PhysicalResourceId,
+} from "aws-cdk-lib/custom-resources";
 
 type StaticWebsiteV2Props = {
   configFileName?: string;
@@ -68,19 +73,6 @@ export class StaticWebsiteV2 extends Construct {
       cacheStrategy
     );
 
-    // Write config.js file
-    if (options.config) {
-      const fileContent = `window["awsConfig"]=${JSON.stringify(
-        options.config
-      )};`;
-
-      const configFileName = options.configFileName || "awsConfig.js";
-      fs.writeFileSync(
-        path.join(options.assetRootDir, configFileName),
-        fileContent
-      );
-    }
-
     const distribution = new Distribution(this, "CloudfrontDistribution", {
       priceClass: PriceClass.PRICE_CLASS_100,
       httpVersion: HttpVersion.HTTP2_AND_3,
@@ -107,13 +99,53 @@ export class StaticWebsiteV2 extends Construct {
       certificate: domainCertificate,
     });
 
-    new BucketDeployment(this, "DeployWithInvalidation", {
-      sources: [Source.asset(options.assetRootDir)],
-      destinationBucket: s3Bucket,
-      distribution,
-      logRetention: RetentionDays.ONE_DAY,
-      prune: true,
-    });
+    const bucketDeployment = new BucketDeployment(
+      this,
+      "DeployWithInvalidation",
+      {
+        sources: [Source.asset(options.assetRootDir)],
+        destinationBucket: s3Bucket,
+        // distribution,
+        logRetention: RetentionDays.ONE_DAY,
+        prune: true,
+      }
+    );
+
+    // Write config.js file
+    let configWriter: AwsCustomResource | undefined;
+    if (options.config) {
+      const fileContent = `window["awsConfig"]=${JSON.stringify(
+        options.config
+      )};`;
+
+      const configFileName = options.configFileName || "awsConfig.js";
+      const sdkCall: AwsSdkCall = {
+        service: "S3",
+        action: "putObject",
+        parameters: {
+          Body: fileContent,
+          Bucket: bucketDeployment.deployedBucket.bucketName,
+          Key: configFileName,
+        },
+        physicalResourceId: PhysicalResourceId.of(new Date().toISOString()),
+      };
+      configWriter = new AwsCustomResource(this, "WriteS3ConfigFile", {
+        logRetention: RetentionDays.ONE_DAY,
+        onUpdate: sdkCall,
+        onCreate: sdkCall,
+        // we need this because we're not doing conventional resource creation
+        policy: {
+          statements: [
+            new PolicyStatement({
+              actions: ["s3:PutObject"],
+              resources: [`${s3Bucket.bucketArn}/${configFileName}`],
+            }),
+          ],
+        },
+      });
+      configWriter.node.addDependency(distribution);
+      configWriter.node.addDependency(bucketDeployment);
+    }
 
     new ARecord(this, "SiteRecord", {
       recordName: options.siteDomainName,
@@ -121,11 +153,42 @@ export class StaticWebsiteV2 extends Construct {
       zone: options.hostedZone,
     });
 
-    this.distribution = distribution;
-
-    new CfnOutput(this, `${id} URL`, {
-      value: `https://${options.siteDomainName} or https://${distribution.distributionDomainName}`,
+    const sdkCall: AwsSdkCall = {
+      service: "CloudFront",
+      action: "createInvalidation",
+      parameters: {
+        DistributionId: distribution.distributionId,
+        InvalidationBatch: {
+          CallerReference: new Date().toISOString(),
+          Paths: {
+            Quantity: 1,
+            Items: ["/*"],
+          },
+        },
+      },
+    };
+    const cacheInvalidator = new AwsCustomResource(this, "CacheInvalidator", {
+      logRetention: RetentionDays.ONE_DAY,
+      onCreate: sdkCall,
+      onUpdate: sdkCall,
+      policy: {
+        statements: [
+          new PolicyStatement({
+            actions: ["cloudfront:CreateInvalidation"],
+            resources: [
+              `arn:aws:cloudfront:::distribution/${distribution.distributionId}`,
+            ],
+          }),
+        ],
+      },
     });
+    cacheInvalidator.node.addDependency(bucketDeployment);
+    cacheInvalidator.node.addDependency(distribution);
+    if (configWriter) {
+      cacheInvalidator.node.addDependency(configWriter);
+    }
+
+    this.distribution = distribution;
   }
 }
 

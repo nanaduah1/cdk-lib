@@ -122,9 +122,7 @@ export class StaticWebsite extends Construct {
       const fileContent = `window["awsConfig"]=${JSON.stringify(
         options.config
       )};`;
-      const configResourceId = Buffer.from(fileContent, "utf-8").toString(
-        "base64"
-      );
+
       const configFileName = options.configFileName || "awsConfig.js";
       new AwsCustomResource(this, "WriteS3ConfigFile", {
         logRetention: RetentionDays.ONE_DAY,
