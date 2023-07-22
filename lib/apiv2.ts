@@ -3,8 +3,10 @@ import {
   HttpApi,
   HttpApiProps,
   HttpMethod,
+  HttpNoneAuthorizer,
   HttpRoute,
   HttpRouteKey,
+  IHttpApi,
   IHttpRouteAuthorizer,
   PayloadFormatVersion,
   SecurityPolicy,
@@ -22,7 +24,7 @@ import {
 } from "aws-cdk-lib/aws-certificatemanager";
 import { ARecord, IHostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { ApiGatewayv2DomainProperties } from "aws-cdk-lib/aws-route53-targets";
-import { Duration } from "aws-cdk-lib";
+import { Duration, IgnoreMode } from "aws-cdk-lib";
 
 interface PythonLambdaApiProps {
   timeout?: Duration | undefined;
@@ -208,5 +210,62 @@ export class HttpApiGateway extends HttpApi {
       ThrottlingBurstLimit: throttlingBurstLimit ?? 100,
       ThrottlingRateLimit: throttlingRateLimit ?? 100,
     });
+  }
+}
+
+type FunctionProps = {
+  memorySize?: number;
+  timeout?: Duration;
+  environment?: { [key: string]: string };
+  layers?: ILayerVersion[];
+  logRetention?: RetentionDays;
+};
+
+type PythonApiProps = {
+  httpApi: HttpApi;
+  authorizer?: IHttpRouteAuthorizer;
+  function?: FunctionProps;
+
+  /**Defines the API routes using the syntax
+   * Method:/path/to/resource/{param1}/{param2}:file/path/to/lambada/function/root
+   * If you want to specify additional properties for the lambda function, you can use the following syntax
+   * Method:/path/to/resource/{param1}/{param2}:file/path/to/lambada/function/root: { memorySize: 128, timeout: 10}
+   */
+  routes: { [key: string]: FunctionProps | string | undefined };
+};
+
+export class PythonApi extends Construct {
+  private readonly functions: { [routeKey: string]: IFunction } = {};
+  constructor(scope: Construct, id: string, props: PythonApiProps) {
+    super(scope, id);
+
+    const { httpApi, routes, authorizer } = props;
+    const functions: { [routeKey: string]: IFunction } = {};
+
+    for (const route in routes) {
+      const [method, routePath, lambadaRootPath] = route.split(":");
+      const projectName = lambadaRootPath.split("/").pop()!;
+      const functionProps =
+        typeof routes[route] === "string" || routes[route] === "undefined"
+          ? {}
+          : (routes[route] as FunctionProps);
+
+      const enpoint = new PythonLambdaApiV2(this, `${id}-${method}`, {
+        apiGateway: httpApi,
+        routePaths: routePath,
+        authorizer: authorizer ?? new HttpNoneAuthorizer(),
+        functionRootFolder: lambadaRootPath,
+        displayName: "",
+        handlerFileName: `${projectName.toLowerCase()}/handler.py`,
+        ...functionProps,
+      });
+
+      functions[`${method.toUpperCase()}:${routePath}`] =
+        enpoint.lambadaFunction;
+    }
+  }
+
+  get(routeKey: string) {
+    return this.functions[routeKey];
   }
 }

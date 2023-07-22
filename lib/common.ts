@@ -1,87 +1,28 @@
-import {
-  HttpApi,
-  HttpMethod,
-  IHttpRouteAuthorizer,
-} from "@aws-cdk/aws-apigatewayv2-alpha";
-import { HttpLambdaIntegration } from "@aws-cdk/aws-apigatewayv2-integrations-alpha";
-import { CfnOutput, Duration, Stack, StackProps } from "aws-cdk-lib";
-import { Runtime, IFunction } from "aws-cdk-lib/aws-lambda";
-import { RetentionDays } from "aws-cdk-lib/aws-logs";
+import { Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
-
-export interface LambdaApiProps {
-  authorizationScopes?: string[] | undefined;
-  httpMethods?: HttpMethod[];
-  functionRootFolder: string;
-  handler?: string;
-  runtime?: Runtime;
-  routePaths: string[] | string;
-  description?: string;
-  logRetention?: RetentionDays;
-  environment?: any;
-  authorizer?: IHttpRouteAuthorizer;
-  apiGateway: HttpApi;
-  displayName: string;
-  assetExcludes?: string[];
-  timeout?: Duration;
-  memorySize?: number;
-}
-
-// Defines an abstract base class for creating LambdaApi constructs
-export abstract class AbstractLambdaApi<
-  TProps extends LambdaApiProps
-> extends Construct {
-  readonly lambdaFunction: IFunction;
-  readonly displayName: string;
-  constructor(scope: Construct, id: string, props: TProps) {
-    super(scope, id);
-
-    const lambdaFunction = this.createLambdaFunction(id, props);
-
-    const httpApiGateway = props.apiGateway;
-
-    const lambdaIntegration = new HttpLambdaIntegration(
-      `${id}-API-Gateway-integration`,
-      lambdaFunction
-    );
-
-    if (typeof props.routePaths === "string") {
-      props.routePaths = [props.routePaths];
-    }
-
-    props.routePaths.map((routePath) => {
-      httpApiGateway.addRoutes({
-        path: routePath,
-        integration: lambdaIntegration,
-        methods: props.httpMethods,
-        authorizer: props.authorizer,
-        authorizationScopes: props.authorizationScopes,
-      });
-    });
-
-    new CfnOutput(this, `${id}-APIEndpoint`, {
-      value: httpApiGateway.url!,
-    });
-    this.lambdaFunction = lambdaFunction;
-    this.displayName = props.displayName;
-  }
-
-  abstract createLambdaFunction(id: string, props: LambdaApiProps): IFunction;
-}
+import { FunctionConfig } from "./types";
 
 export type BaseAppProps = {
-  stages: string[];
+  stages?: string[];
   projectRoot: string;
+  functions?: FunctionConfig;
 } & StackProps;
 
 export abstract class BaseApp extends Stack {
   readonly stageName: string;
   readonly productionStageName: string;
   readonly projectRoot: string;
+  readonly functions: FunctionConfig;
   constructor(scope: Construct, id: string, props: BaseAppProps) {
+    // We read the stage name from the context passed in from the CDK CLI.
     const stageName = scope.node.tryGetContext("stage") || "beta";
 
-    const supportedStages = props.stages;
+    // We read the allowed stages from the environment variable called ALLOWED_STAGES.
+    const allowedStages = process.env.ALLOWED_STAGES?.split(",").map((s) =>
+      s.trim()
+    );
+
+    const supportedStages = allowedStages || props.stages || [];
 
     if (!supportedStages.includes(stageName)) {
       throw Error(`ALLOWED_STAGES does not include ${stageName}`);
@@ -90,6 +31,7 @@ export abstract class BaseApp extends Stack {
     super(scope, `${id}-${stageName}`, props);
     this.stageName = stageName;
     this.projectRoot = props.projectRoot;
+    this.functions = props.functions || {};
   }
 
   get IsProductionStage() {
