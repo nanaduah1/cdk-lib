@@ -1,4 +1,4 @@
-import { Stack, StackProps } from "aws-cdk-lib";
+import { CfnOutput, Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { FunctionConfig } from "./types";
 
@@ -40,5 +40,9 @@ export abstract class BaseApp extends Stack {
 
   get ProductionStageNames() {
     return ["prod", "production"];
+  }
+
+  addOutput(name: string, value: string | undefined) {
+    new CfnOutput(this, name, { value: value ?? "", description: name });
   }
 }
