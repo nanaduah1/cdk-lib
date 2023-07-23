@@ -16,7 +16,7 @@ type RouteProps = string | { [key: string]: FunctionConfig };
 type PythonApiProps = {
   httpApi: HttpApi;
   authorizer?: IHttpRouteAuthorizer;
-  function?: FunctionConfig;
+  functions?: FunctionConfig;
 
   /**Defines the API routes using the syntax
    * Method:/path/to/resource/{param1}/{param2}:file/path/to/lambada/function/root
@@ -41,9 +41,9 @@ export class PythonApi extends Construct {
   constructor(scope: BaseApp, id: string, props: PythonApiProps) {
     super(scope, id);
 
-    const { httpApi, routes, authorizer, function: fnProps } = props;
+    const { httpApi, routes, authorizer, functions } = props;
 
-    const mergedFunctionProps = this.mergeProps(scope.functions, fnProps);
+    const mergedFunctionProps = this.mergeProps(scope.functions, functions);
 
     routes.forEach((route) => {
       const routeKey =
