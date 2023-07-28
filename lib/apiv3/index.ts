@@ -36,6 +36,15 @@ const HttpMethodMap: { [key: string]: HttpMethod } = {
   ANY: HttpMethod.ANY,
 };
 
+const HttpMethodDescriptionMap: { [key: string]: string } = {
+  GET: "Get",
+  POST: "Create",
+  PUT: "Update",
+  DELETE: "Delete",
+  PATCH: "Update",
+  ANY: "Endpoint",
+};
+
 export class PythonApi extends Construct {
   private readonly functions: IFunction[] = [];
   constructor(scope: BaseApp, id: string, props: PythonApiProps) {
@@ -58,13 +67,14 @@ export class PythonApi extends Construct {
 
       const [method, routePath, lambadaRootPath] = routeKey.split(":");
       const projectName = lambadaRootPath.split("/").slice(-1)[0];
-
-      const enpoint = new PythonLambdaApiV2(this, `${id}-${method}`, {
+      const methodDescription = HttpMethodDescriptionMap[method.toUpperCase()];
+      const id = `${methodDescription}-${projectName}-${method}`;
+      const enpoint = new PythonLambdaApiV2(this, id, {
         apiGateway: httpApi,
         routePaths: routePath,
         authorizer: authorizer ?? new HttpNoneAuthorizer(),
         functionRootFolder: lambadaRootPath,
-        displayName: `${projectName} ${method.toUpperCase()}`,
+        displayName: `${methodDescription} ${projectName} Endpoint`,
         handlerFileName: `${projectName.toLowerCase()}/handler.py`,
         httpMethods: [HttpMethodMap[method.toUpperCase()]],
         timeout:
