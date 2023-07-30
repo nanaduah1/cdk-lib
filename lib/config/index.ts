@@ -77,3 +77,5 @@ export class Config {
     await this.dynamodb.send(setCommand);
   }
 }
+
+export { ConfigWriter } from "./writer";
