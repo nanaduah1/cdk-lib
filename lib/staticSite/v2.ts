@@ -38,6 +38,7 @@ type StaticWebsiteV2Props = {
   websiteErrorDocument?: string;
   websiteIndexDocument?: string;
   cacheConfig?: { [path: string]: boolean };
+  certificate?: Certificate;
 };
 
 export class StaticWebsiteV2 extends Construct {
@@ -45,12 +46,15 @@ export class StaticWebsiteV2 extends Construct {
   constructor(scope: Construct, id: string, options: StaticWebsiteV2Props) {
     super(scope, id);
 
-    const { cacheConfig } = options;
+    const { cacheConfig, certificate } = options;
 
-    const domainCertificate = new Certificate(this, "SiteCertificate", {
-      validation: CertificateValidation.fromDns(options.hostedZone),
-      domainName: options.siteDomainName,
-    });
+    // If no certificate is provided, create one
+    const domainCertificate =
+      certificate ?? 
+      new Certificate(this, "SiteCertificate", {
+        validation: CertificateValidation.fromDns(options.hostedZone),
+        domainName: options.siteDomainName,
+      });
 
     const s3Bucket = new Bucket(this, "SiteAssets", {
       publicReadAccess: false,
