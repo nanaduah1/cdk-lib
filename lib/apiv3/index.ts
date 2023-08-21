@@ -11,7 +11,11 @@ import { PythonLambdaApiV2 } from "../apiv2";
 import { FunctionConfig } from "../types";
 import { BaseApp } from "..";
 
-type RouteProps = string | { [key: string]: FunctionConfig };
+type RouteApiProps = {
+  authorizer?: IHttpRouteAuthorizer;
+};
+
+type RouteProps = string | { [key: string]: FunctionConfig & RouteApiProps };
 
 type PythonApiProps = {
   httpApi: HttpApi;
@@ -69,10 +73,12 @@ export class PythonApi extends Construct {
       const projectName = lambadaRootPath.split("/").slice(-1)[0];
       const methodDescription = HttpMethodDescriptionMap[method.toUpperCase()];
       const id = `${methodDescription}-${projectName}-${method}`;
+      const endpointAuthorizer =
+        functionProps.authorizer || authorizer || new HttpNoneAuthorizer();
       const enpoint = new PythonLambdaApiV2(this, id, {
         apiGateway: httpApi,
         routePaths: routePath,
-        authorizer: authorizer ?? new HttpNoneAuthorizer(),
+        authorizer: endpointAuthorizer,
         functionRootFolder: lambadaRootPath,
         displayName: `${methodDescription} ${projectName} Endpoint`,
         handlerFileName: `${projectName.toLowerCase()}/handler.py`,
