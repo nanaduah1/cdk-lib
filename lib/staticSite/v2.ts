@@ -1,4 +1,4 @@
-import { CfnOutput, Duration, RemovalPolicy, Stack } from "aws-cdk-lib";
+import { Duration, RemovalPolicy, Stack } from "aws-cdk-lib";
 import {
   Certificate,
   CertificateValidation,
@@ -19,8 +19,6 @@ import { CloudFrontTarget } from "aws-cdk-lib/aws-route53-targets";
 import { Bucket, BlockPublicAccess } from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
 import { Function, FunctionCode } from "aws-cdk-lib/aws-cloudfront";
-import fs = require("fs");
-import path = require("path");
 import { BucketDeployment, Source } from "aws-cdk-lib/aws-s3-deployment";
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import {

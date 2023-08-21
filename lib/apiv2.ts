@@ -12,7 +12,7 @@ import {
 import { HttpLambdaIntegration } from "@aws-cdk/aws-apigatewayv2-integrations-alpha";
 import { IFunction, ILayerVersion, Runtime } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
-import { PythonLambdaFunction } from "./python";
+import { PythonLambdaFunction } from "./lambda/python";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { CfnStage } from "aws-cdk-lib/aws-apigateway";
 import { ServicePrincipal } from "aws-cdk-lib/aws-iam";

@@ -1,5 +1,5 @@
-import { PythonLambdaFunction } from "../../python";
 import { Construct } from "constructs";
+import { PythonLambdaFunction } from "../../lambda/python";
 import * as path from "path";
 import { Duration, Stack } from "aws-cdk-lib";
 import {
