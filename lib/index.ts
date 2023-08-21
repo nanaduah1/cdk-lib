@@ -1,5 +1,5 @@
 export * from "./apiv2";
-export * from "./python";
+export * from "./lambda/python";
 export * from "./cloudfront/auth@edge";
 export * from "./common";
 export * from "./database/batchWrite";

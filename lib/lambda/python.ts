@@ -4,7 +4,7 @@ import { IVpc } from "aws-cdk-lib/aws-ec2";
 import { Architecture, ILayerVersion, Runtime } from "aws-cdk-lib/aws-lambda";
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
-import { FunctionConfig } from "./types";
+import { FunctionConfig } from "../types";
 
 type PythonLambdaFunctionProps = {
   handlerFileName?: string;
