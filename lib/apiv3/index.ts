@@ -7,9 +7,11 @@ import {
 import { IFunction } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 import { Duration } from "aws-cdk-lib";
-import { PythonLambdaApiV2 } from "../apiv2";
 import { FunctionConfig } from "../types";
-import { BaseApp } from "..";
+import { BaseApp, PythonLambdaApiV2 } from "..";
+import { Table } from "aws-cdk-lib/aws-dynamodb";
+import { Bucket } from "aws-cdk-lib/aws-s3";
+import { Queue } from "aws-cdk-lib/aws-sqs";
 
 type RouteApiProps = {
   authorizer?: IHttpRouteAuthorizer;
@@ -93,8 +95,14 @@ export class PythonApi extends Construct {
         environment: combinedFunctionProps?.environment,
       });
 
-      combinedFunctionProps?.db?.forEach((table) => {
-        table.grantReadWriteData(enpoint.lambadaFunction);
+      combinedFunctionProps?.permissions?.forEach((resource) => {
+        if (resource instanceof Table) {
+          resource.grantReadWriteData(enpoint.lambadaFunction);
+        } else if (resource instanceof Bucket) {
+          resource.grantReadWrite(enpoint.lambadaFunction);
+        } else if (resource instanceof Queue) {
+          resource.grantSendMessages(enpoint.lambadaFunction);
+        }
       });
 
       this.functions.push(enpoint.lambadaFunction);
@@ -127,7 +135,7 @@ export class PythonApi extends Construct {
         ...two?.environment,
       },
       layers: [...(one?.layers || []), ...(two?.layers || [])],
-      db: [...(one?.db || []), ...(two?.db || [])],
+      permissions: [...(one?.permissions || []), ...(two?.permissions || [])],
     };
   }
 }
