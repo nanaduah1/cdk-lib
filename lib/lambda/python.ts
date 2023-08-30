@@ -5,6 +5,9 @@ import { Architecture, Runtime } from "aws-cdk-lib/aws-lambda";
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
 import { FunctionConfig } from "../types";
+import { Table } from "aws-cdk-lib/aws-dynamodb";
+import { Bucket } from "aws-cdk-lib/aws-s3";
+import { Queue } from "aws-cdk-lib/aws-sqs";
 
 type PythonFunctionPropsV2 = {
   /**
@@ -47,8 +50,15 @@ export class PythonFunctionV2 extends PythonFunction {
       },
     });
 
-    props.db?.forEach((table) => {
-      table.grantReadWriteData(this);
+    props.permissions?.forEach((p) => {
+      if (!p) return;
+      if (p instanceof Table) {
+        p.grantReadWriteData(this);
+      } else if (p instanceof Bucket) {
+        p.grantReadWrite(this);
+      } else if (p instanceof Queue) {
+        p.grantSendMessages(this);
+      }
     });
   }
 }
