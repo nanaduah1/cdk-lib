@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { PythonLambdaFunction } from "../../lambda/python";
+import { PythonFunctionV2 } from "../../lambda/python";
 import * as path from "path";
 import { Duration, Stack } from "aws-cdk-lib";
 import {
@@ -106,16 +106,16 @@ export class KnownFrontendAuthorizer extends HttpLambdaAuthorizer {
       });
     }
 
-    const authFunction = new PythonLambdaFunction(scope, `${id}-LambdaAuth`, {
+    const authFunction = new PythonFunctionV2(scope, `${id}-LambdaAuth`, {
       description: "Public web access auth",
-      functionRootFolder: path.join(__dirname, "auth"),
+      path: path.join(__dirname, "auth"),
       handlerFileName: "auth/handler2.py",
       environment: {
         AppName: id,
         AllowedEndpoints: allowedPaths.join(",") || "",
         ApiKeyParameterName: apiSecretParameter.parameterName,
       },
-      assetExcludes: ["tests"],
+      excludeAssests: ["tests"],
     });
 
     super(id, authFunction, {
