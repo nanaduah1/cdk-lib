@@ -1,5 +1,5 @@
-import { Construct } from "constructs";
 import { PythonLambdaFunction } from "../../python";
+import { Construct } from "constructs";
 import * as path from "path";
 import { Duration, Stack } from "aws-cdk-lib";
 import {
@@ -16,44 +16,69 @@ import {
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import { HttpApi, HttpMethod } from "@aws-cdk/aws-apigatewayv2-alpha";
 import { IFunction } from "aws-cdk-lib/aws-lambda";
+import { randomUUID } from "crypto";
 
 type FrontendAuthorizerProps = {
   httpApiId: string;
-  publicDistribution: Distribution;
   pathPatterns?: string[];
   apiSecretKey: string;
+  publicDistribution?: Distribution;
 };
 
 export class SecureBackendAccess extends Construct {
+  private readonly distribution: Distribution;
+  private readonly defaultOrigin: HttpOrigin;
+
   constructor(scope: Construct, id: string, props: FrontendAuthorizerProps) {
     super(scope, id);
 
     const { httpApiId, publicDistribution, pathPatterns, apiSecretKey } = props;
     const region = Stack.of(this).region;
     const configuredPatterns = pathPatterns || ["/api/*"];
+    const origin = new HttpOrigin(
+      `${httpApiId}.execute-api.${region}.amazonaws.com`,
+      {
+        customHeaders: {
+          "x-public-api-key": apiSecretKey,
+        },
+        protocolPolicy: OriginProtocolPolicy.HTTPS_ONLY,
+      }
+    );
+
+    this.distribution =
+      publicDistribution ?? this.createNewDistribution(id, origin);
+    this.defaultOrigin = origin;
 
     configuredPatterns.forEach((pattern) => {
-      publicDistribution.addBehavior(
-        pattern,
-        new HttpOrigin(`${httpApiId}.execute-api.${region}.amazonaws.com`, {
-          customHeaders: {
-            "x-public-api-key": apiSecretKey,
-          },
-          protocolPolicy: OriginProtocolPolicy.HTTPS_ONLY,
-        }),
-        {
-          allowedMethods: AllowedMethods.ALLOW_ALL,
-          viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
-        }
-      );
+      this.distribution.addBehavior(pattern, origin, {
+        allowedMethods: AllowedMethods.ALLOW_ALL,
+        viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
+      });
+    });
+  }
+
+  private createNewDistribution(id: string, origin: HttpOrigin) {
+    return new Distribution(this, `${id}-Distribution`, {
+      defaultBehavior: {
+        origin,
+        allowedMethods: AllowedMethods.ALLOW_ALL,
+        viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
+      },
+    });
+  }
+
+  addEndpoint(path: string, origin?: HttpOrigin) {
+    this.distribution.addBehavior(path, origin ?? this.defaultOrigin, {
+      allowedMethods: AllowedMethods.ALLOW_ALL,
+      viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
     });
   }
 }
 
 type KnownFrontendAuthorizerProps = {
-  apiSecretParameter: StringParameter;
   httpApi: HttpApi;
   allowedRoutes?: { [path: string]: HttpMethod[] };
+  apiSecretParameter?: StringParameter;
 };
 
 export class KnownFrontendAuthorizer extends HttpLambdaAuthorizer {
@@ -73,6 +98,14 @@ export class KnownFrontendAuthorizer extends HttpLambdaAuthorizer {
       }
     }
 
+    let apiSecretParameter = props.apiSecretParameter;
+    // Create a secret parameter if one is not provided
+    if (!apiSecretParameter) {
+      apiSecretParameter = new StringParameter(scope, `${id}-Secret`, {
+        stringValue: randomUUID(),
+      });
+    }
+
     const authFunction = new PythonLambdaFunction(scope, `${id}-LambdaAuth`, {
       description: "Public web access auth",
       functionRootFolder: path.join(__dirname, "auth"),
@@ -80,7 +113,7 @@ export class KnownFrontendAuthorizer extends HttpLambdaAuthorizer {
       environment: {
         AppName: id,
         AllowedEndpoints: allowedPaths.join(",") || "",
-        ApiKeyParameterName: props.apiSecretParameter.parameterName,
+        ApiKeyParameterName: apiSecretParameter.parameterName,
       },
       assetExcludes: ["tests"],
     });
@@ -90,7 +123,7 @@ export class KnownFrontendAuthorizer extends HttpLambdaAuthorizer {
       responseTypes: [HttpLambdaResponseType.IAM],
       resultsCacheTtl: Duration.minutes(10),
     });
-    props.apiSecretParameter.grantRead(authFunction);
+    apiSecretParameter.grantRead(authFunction);
     this.authFunction = authFunction;
   }
 }
