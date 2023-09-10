@@ -15,4 +15,5 @@ export type FunctionConfig = {
   layers?: ILayerVersion[];
   logRetention?: RetentionDays;
   permissions?: AccessibleResources[];
+  name?:string;
 };
