@@ -74,7 +74,7 @@ export class PythonApi extends Construct {
       const [method, routePath, lambadaRootPath] = routeKey.split(":");
       const projectName = lambadaRootPath.split("/").slice(-1)[0];
       const methodDescription = HttpMethodDescriptionMap[method.toUpperCase()];
-      const id = `${methodDescription}-${projectName}-${method}`;
+      const id = [methodDescription,projectName,method, combinedFunctionProps.name ?? ""] `${methodDescription}-${projectName}-${method}`;
       const endpointAuthorizer =
         functionProps.authorizer || authorizer || new HttpNoneAuthorizer();
       const enpoint = new PythonLambdaApiV2(this, id, {
@@ -82,7 +82,7 @@ export class PythonApi extends Construct {
         routePaths: routePath,
         authorizer: endpointAuthorizer,
         functionRootFolder: lambadaRootPath,
-        displayName: `${methodDescription} ${projectName} Endpoint`,
+        displayName: `${combinedFunctionProps.name ?? ''}${methodDescription} ${projectName} Endpoint`,
         handlerFileName: `${projectName.toLowerCase()}/handler.py`,
         httpMethods: [HttpMethodMap[method.toUpperCase()]],
         timeout:
