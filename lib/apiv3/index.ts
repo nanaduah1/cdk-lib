@@ -51,6 +51,8 @@ const HttpMethodDescriptionMap: { [key: string]: string } = {
   ANY: "Endpoint",
 };
 
+const default_handler_module = "handler.handler";
+
 export class PythonApi extends Construct {
   private readonly functions: IFunction[] = [];
   constructor(scope: BaseApp, id: string, props: PythonApiProps) {
@@ -71,19 +73,25 @@ export class PythonApi extends Construct {
         functionProps
       );
 
-      const [method, routePath, lambadaRootPath] = routeKey.split(":");
+      const [method, routePath, lambadaRootPath,handler_module] = routeKey.split(":");
       const projectName = lambadaRootPath.split("/").slice(-1)[0];
       const methodDescription = HttpMethodDescriptionMap[method.toUpperCase()];
       const id = [methodDescription,projectName,method, combinedFunctionProps.name ?? ""].join("-");
       const endpointAuthorizer =
         functionProps.authorizer || authorizer || new HttpNoneAuthorizer();
+
+      // Determine the handler module of the associated function
+      const resolved_handler_module = handler_module || default_handler_module;
+      const [handler_module_name, handler_func_name] = resolved_handler_module.split(".")
+
       const enpoint = new PythonLambdaApiV2(this, id, {
         apiGateway: httpApi,
         routePaths: routePath,
         authorizer: endpointAuthorizer,
         functionRootFolder: lambadaRootPath,
         displayName: `${combinedFunctionProps.name ?? ''}${methodDescription} ${projectName} Endpoint`,
-        handlerFileName: `${projectName.toLowerCase()}/handler.py`,
+        handlerFileName: `${projectName.toLowerCase()}/${handler_module_name}.py`,
+        handler: handler_func_name,
         httpMethods: [HttpMethodMap[method.toUpperCase()]],
         timeout:
           typeof combinedFunctionProps?.timeout === "number"
