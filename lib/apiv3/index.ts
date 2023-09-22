@@ -73,23 +73,32 @@ export class PythonApi extends Construct {
         functionProps
       );
 
-      const [method, routePath, lambadaRootPath,handler_module] = routeKey.split(":");
+      const [method, routePath, lambadaRootPath, handler_module] =
+        routeKey.split(":");
       const projectName = lambadaRootPath.split("/").slice(-1)[0];
       const methodDescription = HttpMethodDescriptionMap[method.toUpperCase()];
-      const id = [methodDescription,projectName,method, combinedFunctionProps.name ?? ""].join("-");
+      const id = [
+        methodDescription,
+        projectName,
+        method,
+        combinedFunctionProps.name ?? "",
+      ].join("-");
       const endpointAuthorizer =
         functionProps.authorizer || authorizer || new HttpNoneAuthorizer();
 
       // Determine the handler module of the associated function
       const resolved_handler_module = handler_module || default_handler_module;
-      const [handler_module_name, handler_func_name] = resolved_handler_module.split(".")
+      const [handler_module_name, handler_func_name] =
+        resolved_handler_module.split(".");
 
       const enpoint = new PythonLambdaApiV2(this, id, {
         apiGateway: httpApi,
         routePaths: routePath,
         authorizer: endpointAuthorizer,
         functionRootFolder: lambadaRootPath,
-        displayName: `${combinedFunctionProps.name ?? ''}${methodDescription} ${projectName} Endpoint`,
+        displayName: `${
+          combinedFunctionProps.name ?? ""
+        }${methodDescription} ${projectName} Endpoint`,
         handlerFileName: `${projectName.toLowerCase()}/${handler_module_name}.py`,
         handler: handler_func_name,
         httpMethods: [HttpMethodMap[method.toUpperCase()]],
@@ -101,6 +110,7 @@ export class PythonApi extends Construct {
         layers: combinedFunctionProps?.layers,
         memorySize: combinedFunctionProps?.memorySize,
         environment: combinedFunctionProps?.environment,
+        runtime: combinedFunctionProps?.runtime,
       });
 
       combinedFunctionProps?.permissions?.forEach((resource) => {
