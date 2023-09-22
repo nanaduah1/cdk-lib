@@ -54,7 +54,7 @@ const HttpMethodDescriptionMap: { [key: string]: string } = {
 const default_handler_module = "handler.handler";
 
 export class PythonApi extends Construct {
-  private readonly functions: IFunction[] = [];
+  private readonly functions: { [id: string | number]: IFunction } = {};
   constructor(scope: BaseApp, id: string, props: PythonApiProps) {
     super(scope, id);
 
@@ -62,7 +62,7 @@ export class PythonApi extends Construct {
 
     const mergedFunctionProps = this.mergeProps(scope.functions, functions);
 
-    routes.forEach((route) => {
+    routes.forEach((route, routeIndex) => {
       const routeKey =
         typeof route === "string" ? route : Object.keys(route)[0];
       const functionProps =
@@ -123,7 +123,14 @@ export class PythonApi extends Construct {
         }
       });
 
-      this.functions.push(enpoint.lambadaFunction);
+      // To support referencing a function by name of index in the routes array
+      // we need to map the functions to the index of the route and the name of the function
+      this.functions[routeIndex] = enpoint.lambadaFunction;
+
+      // If the function has a name, we also want to map the function to the name
+      if (combinedFunctionProps.name) {
+        this.functions[combinedFunctionProps.name] = enpoint.lambadaFunction;
+      }
     });
   }
 
@@ -131,8 +138,14 @@ export class PythonApi extends Construct {
    * Returns the lambda function at the specified index
    * @param index The index of the lambda function based on the order of the routes
    */
-  get(index: number) {
-    return this.functions[index];
+  get(index: number | string) {
+    const lambda = this.functions[index];
+    if (!lambda) {
+      throw new Error(
+        `No lambda function found at index ${index}. You can use the name of the function instead of the index to reference the function`
+      );
+    }
+    return lambda;
   }
 
   /**
