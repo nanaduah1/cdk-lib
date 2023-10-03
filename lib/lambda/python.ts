@@ -26,12 +26,25 @@ type PythonFunctionPropsV2 = {
 
   /**File name patterns to exclude when packaging */
   excludeAssests?: string[];
+
+  /**
+   * The list of paths to poetry projects that should be installed in the lambda layer.
+   */
+  localDependancies?: string[];
 } & FunctionConfig;
 
 export class PythonFunctionV2 extends PythonFunction {
   constructor(scope: Construct, id: string, props: PythonFunctionPropsV2) {
     const runtime = props.runtime || Runtime.PYTHON_3_11;
     const projectName = props.path.split("/").slice(-1)[0];
+
+    let beforeBundling: string[] = [];
+    let afterBundling = [];
+    let volumes = [];
+    if (props.localDependancies) {
+      beforeBundling = createSymlinkCommands(props.localDependancies);
+      afterBundling = ["rm -rf cdk.out/tmp-shared"];
+    }
     super(scope, id, {
       entry: props.path,
       runtime,
@@ -47,6 +60,14 @@ export class PythonFunctionV2 extends PythonFunction {
       vpc: props.vpc,
       bundling: {
         assetExcludes: [...(props.excludeAssests || []), "tests", "README.md"],
+        commandHooks: {
+          beforeBundling(inputDir: string, outputDir: string) {
+            return beforeBundling;
+          },
+          afterBundling(inputDir: string, outputDir: string) {
+            return ['echo "Done with shared dependencies"'];
+          },
+        },
       },
     });
 
@@ -61,4 +82,21 @@ export class PythonFunctionV2 extends PythonFunction {
       }
     });
   }
+}
+
+/**
+ * Generate sequence of commands to create symlink of all the shared projects
+ * to the cdk.out folder.
+ * @param localDependancies
+ */
+function createSymlinkCommands(localDependancies: string[]): string[] {
+  const commands = ["mkdir -p cdk.out/tmp-shared"];
+  for (const project of localDependancies) {
+    commands.push(`ln -s ${project} cdk.out/tmp-shared/${project}`);
+  }
+
+  // copy tmp-shared to the docker working directory
+  commands.push("cp -r cdk.out/tmp-shared .");
+
+  return commands;
 }
