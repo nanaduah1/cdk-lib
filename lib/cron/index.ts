@@ -1,10 +1,10 @@
 import { Construct } from "constructs";
-import { PythonFunctionV2 } from "@fast-ninjas/cdk-constructs/dist/lambda/python";
-import { FunctionConfig } from "@fast-ninjas/cdk-constructs/dist/types";
 import { Rule, Schedule } from "aws-cdk-lib/aws-events";
 import { LambdaFunction } from "aws-cdk-lib/aws-events-targets";
 import { Duration } from "aws-cdk-lib";
-import { BaseApp } from "@fast-ninjas/cdk-constructs/dist";
+import { FunctionConfig } from "../types";
+import { PythonFunctionV2 } from "../lambda/python";
+import { BaseApp } from "../common";
 
 type CronJobProps = {
   /**
