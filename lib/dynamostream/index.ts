@@ -1,9 +1,9 @@
-import { BaseApp } from "@fast-ninjas/cdk-constructs/dist";
-import { FunctionConfig } from "@fast-ninjas/cdk-constructs/dist/types";
 import { ITable } from "aws-cdk-lib/aws-dynamodb";
-import { PythonFunctionV2 } from "@fast-ninjas/cdk-constructs/dist/lambda/python";
 import { DynamoEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { StartingPosition } from "aws-cdk-lib/aws-lambda";
+import { FunctionConfig } from "../types";
+import { PythonFunctionV2 } from "../lambda/python";
+import { BaseApp } from "../common";
 
 type StreamProcessorProps = {
   /**
