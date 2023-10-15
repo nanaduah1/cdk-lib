@@ -8,6 +8,8 @@ import { FunctionConfig } from "../types";
 import { Table } from "aws-cdk-lib/aws-dynamodb";
 import { Bucket } from "aws-cdk-lib/aws-s3";
 import { Queue } from "aws-cdk-lib/aws-sqs";
+import fs from "fs";
+import path from "path";
 
 type PythonFunctionPropsV2 = {
   /**
@@ -31,14 +33,34 @@ type PythonFunctionPropsV2 = {
 export class PythonFunctionV2 extends PythonFunction {
   constructor(scope: Construct, id: string, props: PythonFunctionPropsV2) {
     const runtime = props.runtime || Runtime.PYTHON_3_11;
-    const projectName = props.path.split("/").slice(-1)[0];
+    let handlerModule = props.handlerFileName;
+
+    if (!handlerModule) {
+      // We want to support the default poetry project structure
+      // where the handler is in a folder with the same name as the project
+      // e.g. project-name/project-name/handler.py
+      // So we need to get the project name from the path
+      const projectName = props.path.split("/").slice(-1)[0];
+      //check if handler exists in the project folder
+      if (fs.existsSync(path.join(props.path, projectName, "handler.py"))) {
+        handlerModule = `${projectName.toLowerCase()}/handler.py`;
+      } else if (fs.existsSync(path.join(props.path, "handler.py"))) {
+        // Project uses a flat structure where the handler is in the root folder
+        handlerModule = `handler.py`;
+      }
+
+      if (!fs.existsSync(path.join(props.path, handlerModule ?? ""))) {
+        throw new Error(`Could not find ${handlerModule} in ${props.path}`);
+      }
+    }
+
     super(scope, id, {
       entry: props.path,
       runtime,
       description: props.description,
       logRetention: props.logRetention || RetentionDays.ONE_WEEK,
       handler: props.handler,
-      index: props.handlerFileName || `${projectName.toLowerCase()}/handler.py`,
+      index: handlerModule,
       environment: props.environment,
       memorySize: props.memorySize || 128,
       layers: props.layers,
