@@ -35,7 +35,7 @@ export class PythonFunctionV2 extends PythonFunction {
     const runtime = props.runtime || Runtime.PYTHON_3_11;
     let handlerModule = props.handlerFileName;
 
-    if (!handlerModule) {
+    if (!fs.existsSync(path.join(props.path, handlerModule ?? ""))) {
       // We want to support the default poetry project structure
       // where the handler is in a folder with the same name as the project
       // e.g. project-name/project-name/handler.py
