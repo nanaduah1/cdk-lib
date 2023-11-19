@@ -12,7 +12,6 @@ import {
 import { HttpLambdaIntegration } from "@aws-cdk/aws-apigatewayv2-integrations-alpha";
 import { IFunction, ILayerVersion, Runtime } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
-import { PythonLambdaFunction } from "./python";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { CfnStage } from "aws-cdk-lib/aws-apigateway";
 import { ServicePrincipal } from "aws-cdk-lib/aws-iam";
@@ -23,6 +22,8 @@ import {
 import { ARecord, IHostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { ApiGatewayv2DomainProperties } from "aws-cdk-lib/aws-route53-targets";
 import { Duration } from "aws-cdk-lib";
+import { PythonFunctionV2 } from "./lambda/python";
+import { IVpc } from "aws-cdk-lib/aws-ec2";
 
 interface PythonLambdaApiProps {
   timeout?: Duration | undefined;
@@ -42,6 +43,7 @@ interface PythonLambdaApiProps {
   displayName: string;
   assetExcludes?: string[];
   memorySize?: number;
+  vpc?: IVpc;
 }
 
 export class PythonLambdaApiV2 extends Construct {
@@ -49,18 +51,19 @@ export class PythonLambdaApiV2 extends Construct {
   constructor(scope: Construct, id: string, props: PythonLambdaApiProps) {
     super(scope, id);
 
-    this.lambadaFunction = new PythonLambdaFunction(this, "Function", {
+    this.lambadaFunction = new PythonFunctionV2(this, "Function", {
       description: props.description || `${id} function`,
       runtime: props.runtime,
       handler: props.handler,
       handlerFileName: props.handlerFileName,
       logRetention: props.logRetention,
       environment: props.environment,
-      functionRootFolder: props.functionRootFolder,
-      layers: props.layers,
-      assetExcludes: props.assetExcludes,
-      timeout: props.timeout,
       memorySize: props.memorySize,
+      layers: props.layers,
+      timeout: props.timeout?.toSeconds(),
+      path: props.functionRootFolder,
+      excludeAssests: props.assetExcludes,
+      vpc: props.vpc,
     });
 
     new LambdaAsHttApi(this, "api", {

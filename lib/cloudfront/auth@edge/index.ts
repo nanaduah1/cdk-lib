@@ -1,4 +1,3 @@
-import { PythonLambdaFunction } from "../../python";
 import { Construct } from "constructs";
 import * as path from "path";
 import { Duration, Stack } from "aws-cdk-lib";
@@ -16,6 +15,7 @@ import {
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import { HttpApi, HttpMethod } from "@aws-cdk/aws-apigatewayv2-alpha";
 import { IFunction } from "aws-cdk-lib/aws-lambda";
+import { PythonFunctionV2 } from "../..";
 import { randomUUID } from "crypto";
 
 type FrontendAuthorizerProps = {
@@ -106,16 +106,16 @@ export class KnownFrontendAuthorizer extends HttpLambdaAuthorizer {
       });
     }
 
-    const authFunction = new PythonLambdaFunction(scope, `${id}-LambdaAuth`, {
+    const authFunction = new PythonFunctionV2(scope, `${id}-LambdaAuth`, {
       description: "Public web access auth",
-      functionRootFolder: path.join(__dirname, "auth"),
+      path: path.join(__dirname, "auth"),
       handlerFileName: "auth/handler2.py",
       environment: {
         AppName: id,
         AllowedEndpoints: allowedPaths.join(",") || "",
         ApiKeyParameterName: apiSecretParameter.parameterName,
       },
-      assetExcludes: ["tests"],
+      excludeAssests: ["tests"],
     });
 
     super(id, authFunction, {

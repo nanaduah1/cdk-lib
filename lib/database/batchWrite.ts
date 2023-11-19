@@ -11,11 +11,12 @@ import { toDynamoJson } from "../utils";
 type DynamoBatchWriteItemProps = {
   table: ITable;
   items: any[];
+  physicalResourceId?: string;
 };
 
 export class DynamoBatchWriteItem extends AwsCustomResource {
   constructor(scope: Construct, id: string, props: DynamoBatchWriteItemProps) {
-    const { table, items } = props;
+    const { table, items, physicalResourceId } = props;
     const b64ItemJson = Buffer.from(JSON.stringify(items)).toString("base64");
 
     super(scope, id, {
@@ -32,7 +33,9 @@ export class DynamoBatchWriteItem extends AwsCustomResource {
             })),
           },
         },
-        physicalResourceId: PhysicalResourceId.of(b64ItemJson),
+        physicalResourceId: PhysicalResourceId.of(
+          physicalResourceId ?? b64ItemJson
+        ),
       },
       installLatestAwsSdk: true,
       policy: AwsCustomResourcePolicy.fromSdkCalls({

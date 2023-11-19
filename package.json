@@ -1,6 +1,6 @@
 {
   "name": "@fast-ninjas/cdk-constructs",
-  "version": "0.2.13",
+  "version": "1.3.1-alpha.4",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
   "scripts": {
@@ -16,13 +16,13 @@
     "typescript": "~4.9.5"
   },
   "dependencies": {
-    "@aws-cdk/aws-apigatewayv2-alpha": "^2.80.0-alpha.0",
-    "@aws-cdk/aws-apigatewayv2-authorizers-alpha": "^2.80.0-alpha.0",
-    "@aws-cdk/aws-apigatewayv2-integrations-alpha": "^2.80.0-alpha.0",
-    "@aws-cdk/aws-lambda-python-alpha": "^2.80.0-alpha.0",
+    "@aws-cdk/aws-apigatewayv2-alpha": "^2.99.1-alpha.0",
+    "@aws-cdk/aws-apigatewayv2-authorizers-alpha": "^2.99.1-alpha.0",
+    "@aws-cdk/aws-apigatewayv2-integrations-alpha": "^2.99.1-alpha.0",
+    "@aws-cdk/aws-lambda-python-alpha": "^2.99.1-alpha.0",
     "@aws-sdk/client-dynamodb": "^3.359.0",
-    "aws-cdk-lib": "^2.80.0",
-    "constructs": "^10.2.0"
+    "aws-cdk-lib": "^2.99.1",
+    "constructs": "^10.2.70"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
