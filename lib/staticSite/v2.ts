@@ -11,6 +11,8 @@ import {
   Distribution,
   FunctionEventType,
   IOrigin,
+  EdgeLambda,
+  LambdaEdgeEventType,
 } from "aws-cdk-lib/aws-cloudfront";
 import { S3Origin } from "aws-cdk-lib/aws-cloudfront-origins";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
@@ -21,11 +23,16 @@ import { Construct } from "constructs";
 import { Function, FunctionCode } from "aws-cdk-lib/aws-cloudfront";
 import { BucketDeployment, Source } from "aws-cdk-lib/aws-s3-deployment";
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
+import { PythonFunctionV2 } from "../lambda/python";
+
 import {
   AwsCustomResource,
   AwsSdkCall,
   PhysicalResourceId,
 } from "aws-cdk-lib/custom-resources";
+import path from "path";
+import { Version } from "aws-cdk-lib/aws-lambda";
+import { Lambda } from "aws-cdk-lib/aws-ses-actions";
 
 type StaticWebsiteV2Props = {
   configFileName?: string;
@@ -37,6 +44,19 @@ type StaticWebsiteV2Props = {
   websiteIndexDocument?: string;
   cacheConfig?: { [path: string]: boolean };
   certificate?: Certificate;
+  edgeLambdas?: {
+    /** The function that CloudFront calls to modify requests/responses
+     * functionType: FunctionEventType.VIEWER_REQUEST | FunctionEventType.VIEWER_RESPONSE | FunctionEventType.ORIGIN_REQUEST | FunctionEventType.ORIGIN_RESPONSE
+     */
+    [functionType: string]: PythonFunctionV2;
+  };
+};
+
+const eventTypeMap: any = {
+  "viewer-request": LambdaEdgeEventType.VIEWER_REQUEST,
+  "viewer-response": LambdaEdgeEventType.VIEWER_RESPONSE,
+  "origin-request": LambdaEdgeEventType.ORIGIN_REQUEST,
+  "origin-response": LambdaEdgeEventType.ORIGIN_RESPONSE,
 };
 
 export class StaticWebsiteV2 extends Construct {
@@ -44,7 +64,7 @@ export class StaticWebsiteV2 extends Construct {
   constructor(scope: Construct, id: string, options: StaticWebsiteV2Props) {
     super(scope, id);
 
-    const { cacheConfig, certificate } = options;
+    const { cacheConfig, certificate, edgeLambdas } = options;
 
     // If no certificate is provided, create one
     const domainCertificate =
@@ -75,6 +95,22 @@ export class StaticWebsiteV2 extends Construct {
       cacheStrategy
     );
 
+    let resolvedEdgeLambdas: EdgeLambda[] | undefined = undefined;
+    if (edgeLambdas) {
+      resolvedEdgeLambdas = [];
+      for (const functionType in edgeLambdas) {
+        const lambdaFunction = edgeLambdas[functionType];
+        const name = `${lambdaFunction.functionName}-version`;
+        const version = new Version(this, name, {
+          lambda: lambdaFunction,
+        });
+        resolvedEdgeLambdas.push({
+          functionVersion: version,
+          eventType: eventTypeMap[functionType],
+        });
+      }
+    }
+
     const distribution = new Distribution(this, "CloudfrontDistribution", {
       priceClass: PriceClass.PRICE_CLASS_100,
       httpVersion: HttpVersion.HTTP2_AND_3,
@@ -82,6 +118,7 @@ export class StaticWebsiteV2 extends Construct {
         origin: siteOrigin,
         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         compress: true,
+        edgeLambdas: resolvedEdgeLambdas,
       },
       defaultRootObject: "index.html",
       errorResponses: [
