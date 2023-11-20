@@ -1,6 +1,6 @@
 {
   "name": "@fast-ninjas/cdk-constructs",
-  "version": "1.4.0-alpha.5",
+  "version": "1.4.0-alpha.6",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
   "scripts": {
