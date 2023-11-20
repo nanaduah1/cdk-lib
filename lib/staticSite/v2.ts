@@ -126,7 +126,7 @@ export class StaticWebsiteV2 extends Construct {
           responsePagePath: "/index.html",
         },
       ],
-      additionalBehaviors,
+      additionalBehaviors: edgeLambdas ? undefined : additionalBehaviors,
       domainNames: [options.siteDomainName],
       certificate: domainCertificate,
     });
