@@ -100,6 +100,7 @@ export class StaticWebsiteV2 extends Construct {
         resolvedEdgeLambdas.push({
           functionVersion: lambdaFunction.currentVersion,
           eventType: eventTypeMap[functionType],
+          includeBody: true,
         });
       }
     }
@@ -126,7 +127,7 @@ export class StaticWebsiteV2 extends Construct {
           responsePagePath: "/index.html",
         },
       ],
-      additionalBehaviors: edgeLambdas ? undefined : additionalBehaviors,
+      additionalBehaviors: additionalBehaviors,
       domainNames: [options.siteDomainName],
       certificate: domainCertificate,
     });
