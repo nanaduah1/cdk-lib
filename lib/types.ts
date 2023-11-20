@@ -1,5 +1,5 @@
 import { IGrantable } from "aws-cdk-lib/aws-iam";
-import { ILayerVersion, Runtime } from "aws-cdk-lib/aws-lambda";
+import { Architecture, ILayerVersion, Runtime } from "aws-cdk-lib/aws-lambda";
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import { ITable } from "aws-cdk-lib/aws-dynamodb";
 import { IBucket } from "aws-cdk-lib/aws-s3";
@@ -17,4 +17,5 @@ export type FunctionConfig = {
   permissions?: AccessibleResources[];
   name?: string;
   runtime?: Runtime;
+  architecture?: Architecture;
 };

@@ -64,7 +64,7 @@ export class PythonFunctionV2 extends PythonFunction {
       memorySize: props.memorySize || 128,
       layers: props.layers,
       timeout: Duration.seconds(props.timeout || 5),
-      architecture: Architecture.ARM_64,
+      architecture: props.architecture ?? Architecture.ARM_64,
       vpc: props.vpc,
       bundling: {
         assetExcludes: [...(props.excludeAssests || []), "tests", "README.md"],
