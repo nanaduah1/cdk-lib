@@ -20,16 +20,21 @@ import { ARecord, IHostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { CloudFrontTarget } from "aws-cdk-lib/aws-route53-targets";
 import { Bucket, BlockPublicAccess } from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
-import { Function, FunctionCode } from "aws-cdk-lib/aws-cloudfront";
+import { FunctionCode, Function } from "aws-cdk-lib/aws-cloudfront";
 import { BucketDeployment, Source } from "aws-cdk-lib/aws-s3-deployment";
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
-import { PythonFunctionV2 } from "../lambda/python";
+import { Function as Lambda } from "aws-cdk-lib/aws-lambda";
 
 import {
   AwsCustomResource,
   AwsSdkCall,
   PhysicalResourceId,
 } from "aws-cdk-lib/custom-resources";
+
+type EdgeLambdaProps = {
+  includeBody?: boolean;
+  lambda: Lambda;
+};
 
 type StaticWebsiteV2Props = {
   configFileName?: string;
@@ -45,7 +50,7 @@ type StaticWebsiteV2Props = {
     /** The function that CloudFront calls to modify requests/responses
      * functionType: FunctionEventType.VIEWER_REQUEST | FunctionEventType.VIEWER_RESPONSE | FunctionEventType.ORIGIN_REQUEST | FunctionEventType.ORIGIN_RESPONSE
      */
-    [functionType: string]: PythonFunctionV2;
+    [functionType: string]: EdgeLambdaProps;
   };
 };
 
@@ -96,9 +101,9 @@ export class StaticWebsiteV2 extends Construct {
     if (edgeLambdas) {
       resolvedEdgeLambdas = [];
       for (const functionType in edgeLambdas) {
-        const lambdaFunction = edgeLambdas[functionType];
+        const { lambda, includeBody } = edgeLambdas[functionType];
         resolvedEdgeLambdas.push({
-          functionVersion: lambdaFunction.currentVersion,
+          functionVersion: lambda.currentVersion,
           eventType: eventTypeMap[functionType],
           includeBody: true,
         });
