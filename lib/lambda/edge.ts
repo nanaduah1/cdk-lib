@@ -25,11 +25,13 @@ export class PythonEdgeFunction extends PythonFunctionV2 {
     super(scope, id, { ...props, architecture: Architecture.X86_64 });
   }
 
-  private static copyAssetToLambda(assetPath: string, lambdaPath: string) {
+  private static copyAssetToLambda(assetPath: string, lambdaRoot: string) {
     const fs = require("fs");
     // Copy the index.html file from the build folder
     // to the lambda function folder
+    const assetFileName = assetPath.split("/").pop();
     const assetContent = fs.readFileSync(assetPath, "utf-8");
-    fs.writeFileSync(lambdaPath, assetContent);
+    const destination = `${lambdaRoot}/${assetFileName}`;
+    fs.writeFileSync(destination, assetContent);
   }
 }
