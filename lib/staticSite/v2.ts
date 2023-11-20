@@ -30,9 +30,6 @@ import {
   AwsSdkCall,
   PhysicalResourceId,
 } from "aws-cdk-lib/custom-resources";
-import path from "path";
-import { Version } from "aws-cdk-lib/aws-lambda";
-import { Lambda } from "aws-cdk-lib/aws-ses-actions";
 
 type StaticWebsiteV2Props = {
   configFileName?: string;
@@ -100,12 +97,8 @@ export class StaticWebsiteV2 extends Construct {
       resolvedEdgeLambdas = [];
       for (const functionType in edgeLambdas) {
         const lambdaFunction = edgeLambdas[functionType];
-        const name = `${lambdaFunction.functionName}-version`;
-        const version = new Version(this, name, {
-          lambda: lambdaFunction,
-        });
         resolvedEdgeLambdas.push({
-          functionVersion: version,
+          functionVersion: lambdaFunction.currentVersion,
           eventType: eventTypeMap[functionType],
         });
       }
