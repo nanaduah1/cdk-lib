@@ -105,7 +105,7 @@ export class StaticWebsiteV2 extends Construct {
         resolvedEdgeLambdas.push({
           functionVersion: lambda.currentVersion,
           eventType: eventTypeMap[functionType],
-          includeBody: true,
+          includeBody: includeBody ?? false,
         });
       }
     }
