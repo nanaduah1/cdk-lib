@@ -21,7 +21,11 @@ import { HttpOrigin, S3Origin } from "aws-cdk-lib/aws-cloudfront-origins";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { ARecord, IHostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { CloudFrontTarget } from "aws-cdk-lib/aws-route53-targets";
-import { Bucket, BlockPublicAccess } from "aws-cdk-lib/aws-s3";
+import {
+  Bucket,
+  BlockPublicAccess,
+  BucketAccessControl,
+} from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
 import { FunctionCode, Function } from "aws-cdk-lib/aws-cloudfront";
 import { BucketDeployment, Source } from "aws-cdk-lib/aws-s3-deployment";
@@ -85,15 +89,33 @@ export class StaticWebsiteV2 extends Construct {
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
       autoDeleteObjects: true,
       removalPolicy: RemovalPolicy.DESTROY,
+      accessControl: BucketAccessControl.PRIVATE,
     });
 
-    const cacheStrategy = cacheConfig ?? { "static/*": true };
-    const siteOrigin = new S3Origin(s3Bucket);
+    const defaultCacheBehavior = cacheConfig ?? {};
+    const cacheStrategy = {
+      "static/*": true,
+      "*.png": true,
+      "*.jpg": true,
+      "*.jpeg": true,
+      "*.gif": true,
+      "*.svg": true,
+      "*.ico": true,
+      "*.css": true,
+      "*.js": true,
+      "*.json": true,
+      ...defaultCacheBehavior,
+    };
     const accessIdentity = new OriginAccessIdentity(this, "CloudfrontAccess");
-    const cloudfrontUserAccessPolicy = new PolicyStatement();
-    cloudfrontUserAccessPolicy.addActions("s3:GetObject");
-    cloudfrontUserAccessPolicy.addPrincipals(accessIdentity.grantPrincipal);
-    cloudfrontUserAccessPolicy.addResources(s3Bucket.arnForObjects("*"));
+    s3Bucket.grantRead(accessIdentity);
+    const siteOrigin = new S3Origin(s3Bucket, {
+      originAccessIdentity: accessIdentity,
+    });
+
+    // const cloudfrontUserAccessPolicy = new PolicyStatement();
+    // cloudfrontUserAccessPolicy.addActions("s3:GetObject");
+    // cloudfrontUserAccessPolicy.addPrincipals(accessIdentity.grantPrincipal);
+    // cloudfrontUserAccessPolicy.addResources(s3Bucket.arnForObjects("*"));
 
     const additionalBehaviors = buildCacheConfig(
       this,
@@ -161,7 +183,6 @@ export class StaticWebsiteV2 extends Construct {
       {
         sources: [Source.asset(options.assetRootDir)],
         destinationBucket: s3Bucket,
-        // distribution,
         logRetention: RetentionDays.ONE_DAY,
         prune: true,
       }
