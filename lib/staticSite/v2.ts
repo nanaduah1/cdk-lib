@@ -13,8 +13,11 @@ import {
   IOrigin,
   EdgeLambda,
   LambdaEdgeEventType,
+  AddBehaviorOptions,
+  OriginRequestPolicy,
+  OriginRequestHeaderBehavior,
 } from "aws-cdk-lib/aws-cloudfront";
-import { S3Origin } from "aws-cdk-lib/aws-cloudfront-origins";
+import { HttpOrigin, S3Origin } from "aws-cdk-lib/aws-cloudfront-origins";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { ARecord, IHostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { CloudFrontTarget } from "aws-cdk-lib/aws-route53-targets";
@@ -46,6 +49,7 @@ type StaticWebsiteV2Props = {
   websiteIndexDocument?: string;
   cacheConfig?: { [path: string]: boolean };
   certificate?: Certificate;
+  allowHeaders?: string[];
   edgeLambdas?: {
     /** The function that CloudFront calls to modify requests/responses
      * functionType: FunctionEventType.VIEWER_REQUEST | FunctionEventType.VIEWER_RESPONSE | FunctionEventType.ORIGIN_REQUEST | FunctionEventType.ORIGIN_RESPONSE
@@ -110,6 +114,19 @@ export class StaticWebsiteV2 extends Construct {
       }
     }
 
+    let originRequestPolicy: OriginRequestPolicy | undefined = undefined;
+    if (options.allowHeaders) {
+      originRequestPolicy = new OriginRequestPolicy(
+        this,
+        "OriginRequestPolicy",
+        {
+          headerBehavior: OriginRequestHeaderBehavior.allowList(
+            ...options.allowHeaders
+          ),
+        }
+      );
+    }
+
     const distribution = new Distribution(this, "CloudfrontDistribution", {
       priceClass: PriceClass.PRICE_CLASS_100,
       httpVersion: HttpVersion.HTTP2_AND_3,
@@ -118,6 +135,7 @@ export class StaticWebsiteV2 extends Construct {
         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         compress: true,
         edgeLambdas: resolvedEdgeLambdas,
+        originRequestPolicy: originRequestPolicy,
       },
       defaultRootObject: "index.html",
       errorResponses: [
@@ -128,7 +146,7 @@ export class StaticWebsiteV2 extends Construct {
         },
         {
           httpStatus: 403,
-          responseHttpStatus: 403,
+          responseHttpStatus: 200,
           responsePagePath: "/index.html",
         },
       ],
@@ -230,6 +248,22 @@ export class StaticWebsiteV2 extends Construct {
     }
 
     this.distribution = distribution;
+  }
+
+  addBehavior(pathPattern: string, origin: IOrigin) {
+    this.distribution.addBehavior(pathPattern, origin);
+  }
+
+  addHttpBehavior(
+    pathPattern: string,
+    originUrl: string,
+    options?: AddBehaviorOptions
+  ) {
+    this.distribution.addBehavior(
+      pathPattern,
+      new HttpOrigin(originUrl),
+      options
+    );
   }
 }
 
