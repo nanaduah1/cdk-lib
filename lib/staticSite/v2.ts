@@ -86,7 +86,7 @@ export class StaticWebsiteV2 extends Construct {
 
     const s3Bucket = new Bucket(this, "SiteAssets", {
       publicReadAccess: false,
-      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      // blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
       autoDeleteObjects: true,
       removalPolicy: RemovalPolicy.DESTROY,
       accessControl: BucketAccessControl.PRIVATE,
