@@ -16,16 +16,14 @@ import {
   AddBehaviorOptions,
   OriginRequestPolicy,
   OriginRequestHeaderBehavior,
+  CachePolicy,
+  ICachePolicy,
 } from "aws-cdk-lib/aws-cloudfront";
 import { HttpOrigin, S3Origin } from "aws-cdk-lib/aws-cloudfront-origins";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { ARecord, IHostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { CloudFrontTarget } from "aws-cdk-lib/aws-route53-targets";
-import {
-  Bucket,
-  BlockPublicAccess,
-  BucketAccessControl,
-} from "aws-cdk-lib/aws-s3";
+import { Bucket, BucketAccessControl } from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
 import { FunctionCode, Function } from "aws-cdk-lib/aws-cloudfront";
 import { BucketDeployment, Source } from "aws-cdk-lib/aws-s3-deployment";
@@ -54,6 +52,7 @@ type StaticWebsiteV2Props = {
   cacheConfig?: { [path: string]: boolean };
   certificate?: Certificate;
   allowHeaders?: string[];
+  cachePolicy?: ICachePolicy;
   edgeLambdas?: {
     /** The function that CloudFront calls to modify requests/responses
      * functionType: FunctionEventType.VIEWER_REQUEST | FunctionEventType.VIEWER_RESPONSE | FunctionEventType.ORIGIN_REQUEST | FunctionEventType.ORIGIN_RESPONSE
@@ -71,6 +70,7 @@ const eventTypeMap: any = {
 
 export class StaticWebsiteV2 extends Construct {
   readonly distribution: Distribution;
+  readonly defaultOrigin: IOrigin;
   constructor(scope: Construct, id: string, options: StaticWebsiteV2Props) {
     super(scope, id);
 
@@ -86,7 +86,6 @@ export class StaticWebsiteV2 extends Construct {
 
     const s3Bucket = new Bucket(this, "SiteAssets", {
       publicReadAccess: false,
-      // blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
       autoDeleteObjects: true,
       removalPolicy: RemovalPolicy.DESTROY,
       accessControl: BucketAccessControl.PRIVATE,
@@ -95,15 +94,6 @@ export class StaticWebsiteV2 extends Construct {
     const defaultCacheBehavior = cacheConfig ?? {};
     const cacheStrategy = {
       "static/*": true,
-      "*.png": true,
-      "*.jpg": true,
-      "*.jpeg": true,
-      "*.gif": true,
-      "*.svg": true,
-      "*.ico": true,
-      "*.css": true,
-      "*.js": true,
-      "*.json": true,
       ...defaultCacheBehavior,
     };
     const accessIdentity = new OriginAccessIdentity(this, "CloudfrontAccess");
@@ -111,11 +101,6 @@ export class StaticWebsiteV2 extends Construct {
     const siteOrigin = new S3Origin(s3Bucket, {
       originAccessIdentity: accessIdentity,
     });
-
-    // const cloudfrontUserAccessPolicy = new PolicyStatement();
-    // cloudfrontUserAccessPolicy.addActions("s3:GetObject");
-    // cloudfrontUserAccessPolicy.addPrincipals(accessIdentity.grantPrincipal);
-    // cloudfrontUserAccessPolicy.addResources(s3Bucket.arnForObjects("*"));
 
     const additionalBehaviors = buildCacheConfig(
       this,
@@ -158,6 +143,7 @@ export class StaticWebsiteV2 extends Construct {
         compress: true,
         edgeLambdas: resolvedEdgeLambdas,
         originRequestPolicy: originRequestPolicy,
+        cachePolicy: options.cachePolicy ?? CachePolicy.CACHING_OPTIMIZED,
       },
       defaultRootObject: "index.html",
       errorResponses: [
@@ -269,10 +255,19 @@ export class StaticWebsiteV2 extends Construct {
     }
 
     this.distribution = distribution;
+    this.defaultOrigin = siteOrigin;
   }
 
-  addBehavior(pathPattern: string, origin: IOrigin) {
-    this.distribution.addBehavior(pathPattern, origin);
+  addBehavior(
+    pathPattern: string,
+    origin?: IOrigin,
+    options?: AddBehaviorOptions
+  ) {
+    this.distribution.addBehavior(
+      pathPattern,
+      origin ?? this.defaultOrigin,
+      options
+    );
   }
 
   addHttpBehavior(
