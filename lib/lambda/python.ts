@@ -67,17 +67,25 @@ export class PythonFunctionV2 extends PythonFunction {
       architecture: props.architecture ?? Architecture.ARM_64,
       vpc: props.vpc,
       bundling: {
-        assetExcludes: [...(props.excludeAssests || []), "tests", "README.md"],
+        assetExcludes: [
+          ...(props.excludeAssests || []),
+          "tests",
+          "README.md",
+          ".venv",
+          "venv",
+          ".gitignore",
+          ".git",
+        ],
       },
     });
 
     props.permissions?.forEach((p) => {
       if (!p) return;
-      if (p instanceof Table) {
+      if ("grantReadWriteData" in p) {
         p.grantReadWriteData(this);
-      } else if (p instanceof Bucket) {
+      } else if ("grantReadWrite" in p) {
         p.grantReadWrite(this);
-      } else if (p instanceof Queue) {
+      } else if ("grantSendMessages" in p) {
         p.grantSendMessages(this);
       }
     });
