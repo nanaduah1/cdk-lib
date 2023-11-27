@@ -1,7 +1,6 @@
 import {
   HttpApi,
   HttpMethod,
-  HttpNoneAuthorizer,
   IHttpRouteAuthorizer,
 } from "@aws-cdk/aws-apigatewayv2-alpha";
 import { IFunction } from "aws-cdk-lib/aws-lambda";
@@ -9,9 +8,6 @@ import { Construct } from "constructs";
 import { Duration } from "aws-cdk-lib";
 import { FunctionConfig } from "../types";
 import { BaseApp, PythonLambdaApiV2 } from "..";
-import { Table } from "aws-cdk-lib/aws-dynamodb";
-import { Bucket } from "aws-cdk-lib/aws-s3";
-import { Queue } from "aws-cdk-lib/aws-sqs";
 
 type RouteApiProps = {
   authorizer?: IHttpRouteAuthorizer;
@@ -21,7 +17,7 @@ type RouteProps = string | { [key: string]: FunctionConfig & RouteApiProps };
 
 type PythonApiProps = {
   httpApi: HttpApi;
-  authorizer?: IHttpRouteAuthorizer;
+  authorizer: IHttpRouteAuthorizer;
   functions?: FunctionConfig;
 
   /**Defines the API routes using the syntax
@@ -83,8 +79,7 @@ export class PythonApi extends Construct {
         method,
         combinedFunctionProps.name ?? "",
       ].join("-");
-      const endpointAuthorizer =
-        functionProps.authorizer || authorizer || undefined;
+      const endpointAuthorizer = functionProps.authorizer || authorizer;
 
       // Determine the handler module of the associated function
       const resolved_handler_module = handler_module || default_handler_module;

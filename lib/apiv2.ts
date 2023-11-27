@@ -39,7 +39,7 @@ interface PythonLambdaApiProps {
   description?: string;
   logRetention?: RetentionDays;
   environment?: any;
-  authorizer?: IHttpRouteAuthorizer;
+  authorizer: IHttpRouteAuthorizer;
   apiGateway: HttpApi;
   displayName: string;
   assetExcludes?: string[];
@@ -84,7 +84,7 @@ type LambdaAsHttApiProps = {
   lambdaFunction: IFunction;
   httpApi: HttpApi;
   routePaths: string[] | string;
-  authorizer?: IHttpRouteAuthorizer;
+  authorizer: IHttpRouteAuthorizer;
   authorizationScopes?: string[] | undefined;
   httpMethods?: HttpMethod[];
 };
@@ -112,7 +112,6 @@ export class LambdaAsHttApi extends Construct {
     }
 
     const methods = httpMethods || [HttpMethod.ANY];
-
     props.routePaths.map((routePath) => {
       return methods.map((method) => {
         return new HttpRoute(this, `${method}${routePath}`, {
