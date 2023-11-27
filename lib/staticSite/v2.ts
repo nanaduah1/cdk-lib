@@ -96,12 +96,8 @@ export class StaticWebsiteV2 extends Construct {
       "static/*": true,
       ...defaultCacheBehavior,
     };
-    const accessIdentity = new OriginAccessIdentity(this, "CloudfrontAccess");
-    s3Bucket.grantRead(accessIdentity);
-    const siteOrigin = new S3Origin(s3Bucket, {
-      originAccessIdentity: accessIdentity,
-    });
 
+    const siteOrigin = new S3Origin(s3Bucket);
     const additionalBehaviors = buildCacheConfig(
       this,
       siteOrigin,
