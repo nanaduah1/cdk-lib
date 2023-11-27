@@ -4,7 +4,6 @@ import {
   CertificateValidation,
 } from "aws-cdk-lib/aws-certificatemanager";
 import {
-  OriginAccessIdentity,
   ViewerProtocolPolicy,
   HttpVersion,
   PriceClass,

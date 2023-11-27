@@ -1,7 +1,13 @@
 import { Construct } from "constructs";
 import { PythonFunctionV2 } from "..";
-import { Architecture, Runtime } from "aws-cdk-lib/aws-lambda";
+import {
+  Architecture,
+  Function,
+  IVersion,
+  Runtime,
+} from "aws-cdk-lib/aws-lambda";
 import { FunctionConfig } from "../types";
+import { EdgeLambda, LambdaEdgeEventType } from "aws-cdk-lib/aws-cloudfront";
 
 type PythonEdgeFunctionProps = {
   path: string;
@@ -33,5 +39,46 @@ export class PythonEdgeFunction extends PythonFunctionV2 {
     const assetContent = fs.readFileSync(assetPath, "utf-8");
     const destination = `${lambdaRoot}/${assetFileName}`;
     fs.writeFileSync(destination, assetContent);
+  }
+
+  public edgeFunction(
+    functionType: LambdaEdgeEventType,
+    includeBody: boolean = false
+  ): EdgeLambda {
+    return new EdgeFunction(
+      this,
+      `${this.node.id}-Edge`,
+      this,
+      functionType,
+      includeBody
+    );
+  }
+}
+
+export class EdgeFunction implements EdgeLambda {
+  includeBody: boolean;
+  functionVersion: IVersion;
+  eventType: LambdaEdgeEventType;
+  constructor(
+    scope: Construct,
+    id: string,
+    lambda: Function | string,
+    eventType: LambdaEdgeEventType,
+    includeBody: boolean = false,
+    description?: string,
+    extraFiles?: string[]
+  ) {
+    let func: Function;
+    if (typeof lambda === "string") {
+      func = new PythonEdgeFunction(scope, id, {
+        path: lambda,
+        description,
+        templates: extraFiles,
+      });
+    } else func = lambda as Function;
+
+    this.functionVersion = func.currentVersion;
+    this.eventType = eventType;
+    this.includeBody = includeBody;
   }
 }
