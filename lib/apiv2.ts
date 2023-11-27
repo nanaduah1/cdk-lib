@@ -24,6 +24,7 @@ import { ApiGatewayv2DomainProperties } from "aws-cdk-lib/aws-route53-targets";
 import { Duration } from "aws-cdk-lib";
 import { PythonFunctionV2 } from "./lambda/python";
 import { IVpc } from "aws-cdk-lib/aws-ec2";
+import { AccessibleResources } from "./types";
 
 interface PythonLambdaApiProps {
   timeout?: Duration | undefined;
@@ -38,12 +39,13 @@ interface PythonLambdaApiProps {
   description?: string;
   logRetention?: RetentionDays;
   environment?: any;
-  authorizer: IHttpRouteAuthorizer;
+  authorizer?: IHttpRouteAuthorizer;
   apiGateway: HttpApi;
   displayName: string;
   assetExcludes?: string[];
   memorySize?: number;
   vpc?: IVpc;
+  permissions?: AccessibleResources[];
 }
 
 export class PythonLambdaApiV2 extends Construct {
@@ -64,6 +66,7 @@ export class PythonLambdaApiV2 extends Construct {
       path: props.functionRootFolder,
       excludeAssests: props.assetExcludes,
       vpc: props.vpc,
+      permissions: props.permissions,
     });
 
     new LambdaAsHttApi(this, "api", {
@@ -81,7 +84,7 @@ type LambdaAsHttApiProps = {
   lambdaFunction: IFunction;
   httpApi: HttpApi;
   routePaths: string[] | string;
-  authorizer: IHttpRouteAuthorizer;
+  authorizer?: IHttpRouteAuthorizer;
   authorizationScopes?: string[] | undefined;
   httpMethods?: HttpMethod[];
 };

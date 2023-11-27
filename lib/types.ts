@@ -5,7 +5,7 @@ import { ITable } from "aws-cdk-lib/aws-dynamodb";
 import { IBucket } from "aws-cdk-lib/aws-s3";
 import { IQueue } from "aws-cdk-lib/aws-sqs";
 
-type AccessibleResources = ITable | IBucket | IQueue | IGrantable;
+export type AccessibleResources = ITable | IBucket | IQueue | IGrantable;
 
 export type FunctionConfig = {
   memorySize?: number;

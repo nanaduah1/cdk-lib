@@ -84,7 +84,7 @@ export class PythonApi extends Construct {
         combinedFunctionProps.name ?? "",
       ].join("-");
       const endpointAuthorizer =
-        functionProps.authorizer || authorizer || new HttpNoneAuthorizer();
+        functionProps.authorizer || authorizer || undefined;
 
       // Determine the handler module of the associated function
       const resolved_handler_module = handler_module || default_handler_module;
@@ -111,16 +111,7 @@ export class PythonApi extends Construct {
         memorySize: combinedFunctionProps?.memorySize,
         environment: combinedFunctionProps?.environment,
         runtime: combinedFunctionProps?.runtime,
-      });
-
-      combinedFunctionProps?.permissions?.forEach((resource) => {
-        if (resource instanceof Table) {
-          resource.grantReadWriteData(enpoint.lambadaFunction);
-        } else if (resource instanceof Bucket) {
-          resource.grantReadWrite(enpoint.lambadaFunction);
-        } else if (resource instanceof Queue) {
-          resource.grantSendMessages(enpoint.lambadaFunction);
-        }
+        permissions: combinedFunctionProps?.permissions,
       });
 
       // To support referencing a function by name of index in the routes array
