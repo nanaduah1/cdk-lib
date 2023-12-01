@@ -1,6 +1,6 @@
 {
   "name": "@fast-ninjas/cdk-constructs",
-  "version": "1.4.0-beta.6",
+  "version": "1.4.0-beta.7",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
   "license": "Apache-2.0",
@@ -23,7 +23,8 @@
     "@aws-cdk/aws-lambda-python-alpha": "^2.99.1-alpha.0",
     "@aws-sdk/client-dynamodb": "^3.359.0",
     "aws-cdk-lib": "2.99.1",
-    "constructs": "^10.0.0"
+    "constructs": "^10.0.0",
+    "yaml": "^2.3.4"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"

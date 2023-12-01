@@ -1,6 +1,7 @@
 import {
   HttpApi,
   HttpMethod,
+  HttpNoneAuthorizer,
   IHttpRouteAuthorizer,
 } from "@aws-cdk/aws-apigatewayv2-alpha";
 import { IFunction } from "aws-cdk-lib/aws-lambda";
@@ -8,6 +9,8 @@ import { Construct } from "constructs";
 import { Duration } from "aws-cdk-lib";
 import { FunctionConfig } from "../types";
 import { BaseApp, PythonLambdaApiV2 } from "..";
+import path from "path";
+import { IGrantable } from "aws-cdk-lib/aws-iam";
 
 type RouteApiProps = {
   authorizer?: IHttpRouteAuthorizer;
@@ -154,5 +157,55 @@ export class PythonApi extends Construct {
       layers: [...(one?.layers || []), ...(two?.layers || [])],
       permissions: [...(one?.permissions || []), ...(two?.permissions || [])],
     };
+  }
+}
+
+type RoutesProps = {
+  authorizer: IHttpRouteAuthorizer;
+  /** The root folder of the project */
+  projectRoot: string;
+  /** The grantable resources groups that can be associated with functions
+   * Example: { "dynamodb": [logsTagble, databaseTable] } makes it possible so that
+   * we can associate the logsTable and databaseTable with the functions that have
+   * permissions:
+   *  - dynamodb
+   */
+  grantables?: { [key: string]: IGrantable[] };
+};
+
+export class ApiRoutes {
+  static fromYaml(app: BaseApp, file: string, props: RoutesProps) {
+    const yml = require("yaml");
+    const fs = require("fs");
+    const { routes, root } = yml.parse(fs.readFileSync(file, "utf8"));
+    return routes.map((route: any) => {
+      const awsCompatiblePath = route.url
+        .replace(/\</g, "{")
+        .replace(/\>/g, "}"); // replace < and > with { and } for aws
+
+      const functionPtath = path.join(props.projectRoot, root, route.path);
+      const binding = `${route.method}:${awsCompatiblePath}:${functionPtath}:${route.handler}`;
+      let permissions = undefined;
+      if (props.grantables && route.permissions) {
+        const grants: IGrantable[] = [];
+        for (const grantableName in route.permissions) {
+          if (route.handler.includes(grantableName)) {
+            grants.concat(props.grantables[grantableName]);
+          }
+        }
+        permissions = grants || undefined;
+      }
+
+      const authorizer = route.public
+        ? new HttpNoneAuthorizer()
+        : props.authorizer;
+      return {
+        [binding]: {
+          authorizer,
+          name: route.name,
+          permissions,
+        },
+      };
+    });
   }
 }
