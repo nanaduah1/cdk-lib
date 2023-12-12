@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "getlogs2"
+version = "0.1.0"
+description = ""
+authors = ["Nana Duah <gabano2005@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+cloudlydb = {git = "https://github.com/nanaduah1/cloudly-dynamodb.git", rev = "2.0.1"}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

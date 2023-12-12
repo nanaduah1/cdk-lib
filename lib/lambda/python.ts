@@ -1,15 +1,16 @@
-import { PythonFunction } from "@aws-cdk/aws-lambda-python-alpha";
+import {
+  PythonFunction,
+  PythonLayerVersion,
+} from "@aws-cdk/aws-lambda-python-alpha";
 import { Duration } from "aws-cdk-lib";
 import { IVpc } from "aws-cdk-lib/aws-ec2";
-import { Architecture, Runtime } from "aws-cdk-lib/aws-lambda";
+import { Architecture, ILayerVersion, Runtime } from "aws-cdk-lib/aws-lambda";
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
 import { FunctionConfig } from "../types";
-import { Table } from "aws-cdk-lib/aws-dynamodb";
-import { Bucket } from "aws-cdk-lib/aws-s3";
-import { Queue } from "aws-cdk-lib/aws-sqs";
-import fs from "fs";
+import fs, { readFileSync } from "fs";
 import path from "path";
+import { parse as parseYml } from "yaml";
 
 type PythonFunctionPropsV2 = {
   /**
@@ -89,5 +90,46 @@ export class PythonFunctionV2 extends PythonFunction {
         p.grantSendMessages(this);
       }
     });
+  }
+}
+
+export class FunctionLayer {
+  static getLayer(
+    scope: Construct,
+    projectRoot: string,
+    fileName?: string
+  ): { [key: string]: ILayerVersion } {
+    const config = parseYml(readFileSync(fileName ?? "Cloudly.yml", "utf-8"));
+    const layers = config.layers ?? [];
+
+    const layerMap: { [key: string]: ILayerVersion } = {};
+    for (const layer of layers) {
+      const runtimes = layer.runtimes?.map(this.getRuntime) ?? [];
+
+      if (runtimes.length === 0) {
+        runtimes.push(Runtime.PYTHON_3_11);
+      }
+
+      layerMap[layer.name] = new PythonLayerVersion(scope, layer.name, {
+        entry: path.join(projectRoot, layer.path),
+        compatibleRuntimes: runtimes,
+        description: layer.description,
+      });
+    }
+
+    return layerMap;
+  }
+
+  static getRuntime(runtime: string): Runtime {
+    switch (runtime.toLowerCase()) {
+      case "python3.9":
+        return Runtime.PYTHON_3_9;
+      case "python3.10":
+        return Runtime.PYTHON_3_10;
+      case "python3.11":
+        return Runtime.PYTHON_3_11;
+      default:
+        throw new Error(`Unsupported runtime: ${runtime}`);
+    }
   }
 }
