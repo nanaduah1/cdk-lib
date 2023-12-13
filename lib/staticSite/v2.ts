@@ -46,6 +46,7 @@ type StaticWebsiteV2Props = {
   assetRootDir: string;
   hostedZone: IHostedZone;
   siteDomainName: string;
+  alternateDomainNames?: string[];
   websiteErrorDocument?: string;
   websiteIndexDocument?: string;
   cacheConfig?: { [path: string]: boolean };
@@ -154,7 +155,10 @@ export class StaticWebsiteV2 extends Construct {
         },
       ],
       additionalBehaviors: additionalBehaviors,
-      domainNames: [options.siteDomainName],
+      domainNames: [
+        options.siteDomainName,
+        ...(options.alternateDomainNames ?? []),
+      ],
       certificate: domainCertificate,
     });
 

@@ -7,7 +7,12 @@ import {
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Runtime } from "aws-cdk-lib/aws-lambda";
-import { Table, AttributeType, BillingMode } from "aws-cdk-lib/aws-dynamodb";
+import {
+  Table,
+  AttributeType,
+  BillingMode,
+  ITable,
+} from "aws-cdk-lib/aws-dynamodb";
 import { RemovalPolicy } from "aws-cdk-lib";
 import { PythonFunctionV2 } from "../lambda/python";
 import path = require("path");
@@ -21,23 +26,26 @@ type ApplicationLogsProps = {
   readMemorySize?: number;
   stageName: string;
   authorizer: IHttpRouteAuthorizer;
+  logsTable?: ITable;
 };
 
 export class ApplicationLogs extends Construct {
-  readonly logsDataTable: Table;
+  readonly logsDataTable: ITable;
   constructor(scope: Construct, id: string, props: ApplicationLogsProps) {
     super(scope, id);
 
     const { routePath, httpApi, writeMemorySize, stageName, authorizer } =
       props;
 
-    const logsDatabase = new Table(this, `${id}-Logs${stageName}`, {
-      partitionKey: { name: "pk", type: AttributeType.STRING },
-      sortKey: { name: "sk", type: AttributeType.STRING },
-      billingMode: BillingMode.PAY_PER_REQUEST,
-      removalPolicy:
-        stageName === "prod" ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
-    });
+    const logsDatabase =
+      props.logsTable ??
+      new Table(this, `${id}-Logs${stageName}`, {
+        partitionKey: { name: "pk", type: AttributeType.STRING },
+        sortKey: { name: "sk", type: AttributeType.STRING },
+        billingMode: BillingMode.PAY_PER_REQUEST,
+        removalPolicy:
+          stageName === "prod" ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
+      });
 
     const createLogs = new SqsHttpApi(this, `${id}-Create`, {
       httpApi,
