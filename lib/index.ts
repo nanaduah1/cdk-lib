@@ -7,7 +7,7 @@ export * from "./database/dynamodb";
 export * from "./dynamoJsonCovert";
 export * from "./pipes/sqsToStepFunction";
 export * from "./sqsHttpApi";
-export * from "./staticSite";
+export * from "./staticSite/v2";
 export * from "./stepFunctionApi";
 export * from "./stepFunctions/conditionalWorkflow";
 export * from "./stepFunctions/dispatchEventTask";
