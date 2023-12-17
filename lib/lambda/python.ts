@@ -58,14 +58,8 @@ export class PythonFunctionV2 extends PythonFunction {
     }
 
     let localDependencies = undefined;
-    if (fs.existsSync(path.join(props.path, "poetry.lock"))) {
-      const depsParser = new PoetryLockParser();
-      const lockFileContent = fs.readFileSync(
-        path.join(props.path, "poetry.lock"),
-        "utf-8"
-      );
-      localDependencies = depsParser.getLocalDependencies(lockFileContent);
-    }
+    const depsParser = new PoetryLockParser();
+    localDependencies = depsParser.getLocalDependencies(props.path);
     const volumes = localDependencies?.map((d) => ({
       containerPath: `/${d.name}`,
       hostPath: `${path.resolve(props.path, d.url)}`,

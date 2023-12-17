@@ -1,3 +1,6 @@
+import fs, { readFileSync } from "fs";
+import path from "path";
+
 type DependencyProps = {
   url: string;
   name: string;
@@ -5,10 +8,14 @@ type DependencyProps = {
   type: string;
 };
 export class PoetryLockParser {
-  getLocalDependencies(exampleLockFile: string): DependencyProps[] {
-    const dependencies = this.getDependencies(exampleLockFile);
-    const localDeps = dependencies.filter((d) => d.type === "directory");
-    return localDeps;
+  getLocalDependencies(projectDirectory: string): DependencyProps[] {
+    const lockfile = path.join(projectDirectory, "poetry.lock");
+    if (fs.existsSync(lockfile)) {
+      const lockFileContent = fs.readFileSync(path.join(lockfile), "utf-8");
+      const dependencies = this.getDependencies(lockFileContent);
+      return dependencies.filter((d) => d.type === "directory");
+    }
+    return [];
   }
 
   private getDependencies(exampleLockFile: string): DependencyProps[] {
