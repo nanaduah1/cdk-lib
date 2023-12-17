@@ -55,7 +55,7 @@ test("PoetryDependenciesParser", () => {
 
   const parser = new PoetryLockParser();
   const localDeps = parser.getLocalDependencies(tempLockFile);
-  fs.rmdirSync(tempLockFile, { recursive: true });
+  fs.rmSync(tempLockFile, { recursive: true });
 
   expect(localDeps).toHaveLength(1);
   expect(localDeps[0].name).toEqual("payeasy");

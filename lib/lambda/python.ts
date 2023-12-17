@@ -61,9 +61,11 @@ export class PythonFunctionV2 extends PythonFunction {
     const depsParser = new PoetryLockParser();
     localDependencies = depsParser.getLocalDependencies(props.path);
     const volumes = localDependencies?.map((d) => ({
-      containerPath: `/${d.name}`,
+      containerPath: `/${d.url}`.replace("../", ""),
       hostPath: `${path.resolve(props.path, d.url)}`,
     }));
+
+    console.log("Mounding local dependency Volumes: ", volumes);
 
     super(scope, id, {
       entry: props.path,
