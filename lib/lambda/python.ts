@@ -3,7 +3,7 @@ import {
   PythonLayerVersion,
 } from "@aws-cdk/aws-lambda-python-alpha";
 import { Duration } from "aws-cdk-lib";
-import { IVpc } from "aws-cdk-lib/aws-ec2";
+import { ISecurityGroup, IVpc, SubnetSelection } from "aws-cdk-lib/aws-ec2";
 import { Architecture, ILayerVersion, Runtime } from "aws-cdk-lib/aws-lambda";
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
@@ -11,6 +11,7 @@ import { FunctionConfig } from "../types";
 import fs, { readFileSync } from "fs";
 import path from "path";
 import { parse as parseYml } from "yaml";
+import { PoetryLockParser } from "./bundling";
 
 type PythonFunctionPropsV2 = {
   /**
@@ -26,6 +27,8 @@ type PythonFunctionPropsV2 = {
   /**Name of the handler file. Default: handler.py */
   handlerFileName?: string;
   vpc?: IVpc;
+  subnets?: SubnetSelection;
+  securityGroups?: ISecurityGroup[];
 
   /**File name patterns to exclude when packaging */
   excludeAssests?: string[];
@@ -54,6 +57,20 @@ export class PythonFunctionV2 extends PythonFunction {
       }
     }
 
+    let localDependencies = undefined;
+    if (fs.existsSync(path.join(props.path, "poetry.lock"))) {
+      const depsParser = new PoetryLockParser();
+      const lockFileContent = fs.readFileSync(
+        path.join(props.path, "poetry.lock"),
+        "utf-8"
+      );
+      localDependencies = depsParser.getLocalDependencies(lockFileContent);
+    }
+    const volumes = localDependencies?.map((d) => ({
+      containerPath: `/${d.name}`,
+      hostPath: `${path.resolve(props.path, d.url)}`,
+    }));
+
     super(scope, id, {
       entry: props.path,
       runtime,
@@ -67,6 +84,8 @@ export class PythonFunctionV2 extends PythonFunction {
       timeout: Duration.seconds(props.timeout || 5),
       architecture: props.architecture ?? Architecture.ARM_64,
       vpc: props.vpc,
+      vpcSubnets: props.subnets,
+      securityGroups: props.securityGroups,
       bundling: {
         assetExcludes: [
           ...(props.excludeAssests || []),
@@ -77,6 +96,7 @@ export class PythonFunctionV2 extends PythonFunction {
           ".gitignore",
           ".git",
         ],
+        volumes,
       },
     });
 
