@@ -59,6 +59,7 @@ type StaticWebsiteV2Props = {
      */
     [functionType: string]: EdgeLambdaProps;
   };
+  originCustomHeaders?: { [headerName: string]: string };
 };
 
 const eventTypeMap: any = {
@@ -97,7 +98,9 @@ export class StaticWebsiteV2 extends Construct {
       ...defaultCacheBehavior,
     };
 
-    const siteOrigin = new S3Origin(s3Bucket);
+    const siteOrigin = new S3Origin(s3Bucket, {
+      customHeaders: options.originCustomHeaders,
+    });
     const additionalBehaviors = buildCacheConfig(
       this,
       siteOrigin,
