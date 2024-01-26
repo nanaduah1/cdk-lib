@@ -1,6 +1,6 @@
 {
   "name": "@fast-ninjas/cdk-constructs",
-  "version": "1.4.1-beta.2",
+  "version": "1.4.1-beta.3",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
   "license": "Apache-2.0",

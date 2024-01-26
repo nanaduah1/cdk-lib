@@ -23,7 +23,7 @@ import { ARecord, IHostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { ApiGatewayv2DomainProperties } from "aws-cdk-lib/aws-route53-targets";
 import { Duration } from "aws-cdk-lib";
 import { PythonFunctionV2 } from "./lambda/python";
-import { IVpc } from "aws-cdk-lib/aws-ec2";
+import { ISecurityGroup, IVpc, SubnetType } from "aws-cdk-lib/aws-ec2";
 import { AccessibleResources } from "./types";
 
 interface PythonLambdaApiProps {
@@ -45,6 +45,7 @@ interface PythonLambdaApiProps {
   assetExcludes?: string[];
   memorySize?: number;
   vpc?: IVpc;
+  securityGroups?: ISecurityGroup[];
   permissions?: AccessibleResources[];
 }
 
@@ -66,6 +67,10 @@ export class PythonLambdaApiV2 extends Construct {
       path: props.functionRootFolder,
       excludeAssests: props.assetExcludes,
       vpc: props.vpc,
+      subnets: props.vpc?.selectSubnets({
+        subnetType: SubnetType.PRIVATE_WITH_EGRESS,
+      }),
+      securityGroups: props.securityGroups,
       permissions: props.permissions,
     });
 

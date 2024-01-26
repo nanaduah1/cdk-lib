@@ -110,6 +110,8 @@ export class PythonApi extends Construct {
         environment: combinedFunctionProps?.environment,
         runtime: combinedFunctionProps?.runtime,
         permissions: combinedFunctionProps?.permissions,
+        vpc: combinedFunctionProps?.vpc,
+        securityGroups: combinedFunctionProps?.securityGroups,
       });
 
       // To support referencing a function by name of index in the routes array
