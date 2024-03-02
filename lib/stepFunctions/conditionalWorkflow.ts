@@ -3,6 +3,7 @@ import {
   Chain,
   Choice,
   Condition,
+  DefinitionBody,
   LogLevel,
   State,
   StateMachine,
@@ -55,7 +56,7 @@ export class ConditionalWorkflow extends Construct {
       .otherwise(complete);
 
     this.stateMachine = new StateMachine(this, `${id}-workflow`, {
-      definition: canProcessThisEventState,
+      definitionBody: DefinitionBody.fromChainable(canProcessThisEventState),
       stateMachineType: workflowType || StateMachineType.EXPRESS,
       logs:
         workflowType && workflowType === StateMachineType.STANDARD
