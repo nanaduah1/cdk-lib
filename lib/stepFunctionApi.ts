@@ -1,15 +1,5 @@
-import {
-  HttpApi,
-  HttpAuthorizer,
-  HttpMethod,
-  HttpRoute,
-} from "@aws-cdk/aws-apigatewayv2-alpha";
-import {
-  ConnectionType,
-  Integration,
-  IntegrationType,
-  PassthroughBehavior,
-} from "aws-cdk-lib/aws-apigateway";
+import { HttpApi, HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
+import { PassthroughBehavior } from "aws-cdk-lib/aws-apigateway";
 import { CfnIntegration, CfnRoute } from "aws-cdk-lib/aws-apigatewayv2";
 import {
   Effect,

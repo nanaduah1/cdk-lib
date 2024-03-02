@@ -8,8 +8,8 @@ import {
   IHttpRouteAuthorizer,
   PayloadFormatVersion,
   SecurityPolicy,
-} from "@aws-cdk/aws-apigatewayv2-alpha";
-import { HttpLambdaIntegration } from "@aws-cdk/aws-apigatewayv2-integrations-alpha";
+} from "aws-cdk-lib/aws-apigatewayv2";
+import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import { IFunction, ILayerVersion, Runtime } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";

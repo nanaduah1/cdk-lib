@@ -11,9 +11,9 @@ import { HttpOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
 import {
   HttpLambdaAuthorizer,
   HttpLambdaResponseType,
-} from "@aws-cdk/aws-apigatewayv2-authorizers-alpha";
+} from "aws-cdk-lib/aws-apigatewayv2-authorizers";
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
-import { HttpApi, HttpMethod } from "@aws-cdk/aws-apigatewayv2-alpha";
+import { HttpApi, HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
 import { IFunction } from "aws-cdk-lib/aws-lambda";
 import { PythonFunctionV2 } from "../..";
 import { randomUUID } from "crypto";

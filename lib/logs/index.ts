@@ -3,7 +3,7 @@ import {
   HttpApi,
   HttpMethod,
   IHttpRouteAuthorizer,
-} from "@aws-cdk/aws-apigatewayv2-alpha";
+} from "aws-cdk-lib/aws-apigatewayv2";
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Runtime } from "aws-cdk-lib/aws-lambda";

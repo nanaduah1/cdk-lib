@@ -3,7 +3,7 @@ import {
   HttpMethod,
   HttpNoneAuthorizer,
   IHttpRouteAuthorizer,
-} from "@aws-cdk/aws-apigatewayv2-alpha";
+} from "aws-cdk-lib/aws-apigatewayv2";
 import { IFunction } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 import { Duration } from "aws-cdk-lib";
