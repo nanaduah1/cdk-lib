@@ -21,14 +21,28 @@ import { HttpServiceDiscoveryIntegration } from "aws-cdk-lib/aws-apigatewayv2-in
 import { IVpcLink } from "aws-cdk-lib/aws-apigateway";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { CfnStage } from "aws-cdk-lib/aws-apigatewayv2";
+import { mkdirSync, writeFileSync } from "fs";
+import * as yaml from "yaml";
 
-type LoadBalancerProps = {
+type TraefikConfig = {
+  /** Defaults to traefik:v2.11 */
+  traefikImageVersion?: string;
+  /**
+   * Traefik configuration written as JSON object.
+   * A minimal configuration is provided by default that enables the ECS provider and the dashboard.
+   * You can override this configuration by providing your own JSON object.
+   * You must allow your IP/IP range in dashboardAccessIps if you want to access the dashboard.
+   * https://doc.traefik.io/traefik/reference/static-configuration/file/
+   */
+  config?: any;
+  dashboardAccessIps?: string[];
+};
+
+type TraefikLoadBalancerProps = {
   name: string;
   cluster: ICluster;
   securityGroup: ISecurityGroup;
-  /** Defaults to traefik:v2.11 */
-  traefikImage?: string;
-  enableAccessLog?: boolean;
+  enableHttpApiGatewayAccessLog?: boolean;
   /** Defaults to EC2 */
   compatibility?: Compatibility;
   /** Defaults to 256 */
@@ -37,6 +51,7 @@ type LoadBalancerProps = {
   memoryMiB?: string;
   /** Defaults to AWS_VPC */
   networkMode?: NetworkMode;
+  traefik: TraefikConfig;
 };
 
 export class TraefikLoadBalancerForECS extends Construct {
@@ -44,7 +59,7 @@ export class TraefikLoadBalancerForECS extends Construct {
   readonly service: Ec2Service;
   readonly httpApi: HttpApi;
   readonly vpcLink: IVpcLink;
-  constructor(scope: Construct, id: string, props: LoadBalancerProps) {
+  constructor(scope: Construct, id: string, props: TraefikLoadBalancerProps) {
     super(scope, id);
 
     const { cluster, name } = props;
@@ -56,19 +71,17 @@ export class TraefikLoadBalancerForECS extends Construct {
       networkMode: props.networkMode ?? NetworkMode.AWS_VPC,
     });
 
-    const region = Stack.of(this).region;
-    const imageName = props.traefikImage ?? "traefik:v2.11";
+    // const region = Stack.of(this).region;
+    // const taskCommand = [
+    //   "--providers.ecs.ecsAnywhere=true",
+    //   `--providers.ecs.region=${region}`,
+    //   "--providers.ecs.autoDiscoverClusters=true",
+    //   "--providers.ecs.exposedByDefault=true",
+    // ];
+
+    const containerImage = this.buildTraefikImage(props.traefik);
     taskDefinition.addContainer("Traefik-" + name, {
-      image: ContainerImage.fromRegistry(imageName),
-      command: [
-        "--api.dashboard=true",
-        "--api.insecure=true",
-        "--accesslog=true",
-        "--providers.ecs.ecsAnywhere=true",
-        `--providers.ecs.region=${region}`,
-        "--providers.ecs.autoDiscoverClusters=true",
-        "--providers.ecs.exposedByDefault=true",
-      ],
+      image: containerImage,
       portMappings: [{ containerPort: 80 }, { containerPort: 8080 }],
     });
 
@@ -107,7 +120,7 @@ export class TraefikLoadBalancerForECS extends Construct {
       ),
     });
 
-    if (props.enableAccessLog) {
+    if (props.enableHttpApiGatewayAccessLog) {
       this.addAccessLog(httpApi);
     }
 
@@ -115,6 +128,27 @@ export class TraefikLoadBalancerForECS extends Construct {
     this.service = service;
     this.httpApi = httpApi;
     this.vpcLink = vpcLink;
+  }
+
+  private buildTraefikImage(
+    traefik: TraefikConfig,
+    dir: string = "./.builld/traefik"
+  ) {
+    const imageName = traefik.traefikImageVersion ?? "traefik:v2.11";
+    const meregedConfig = {
+      ...this.defaultConfig(traefik),
+      ...(traefik.config ?? {}),
+    };
+
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(dir + "/traefik.yml", yaml.stringify(meregedConfig));
+    writeFileSync(
+      dir + "/Dockerfile",
+      `FROM ${imageName}
+       COPY traefik.yml /etc/traefik/traefik.yml
+      `
+    );
+    return ContainerImage.fromAsset(dir);
   }
 
   private addAccessLog(httpApi: HttpApi) {
@@ -158,5 +192,39 @@ export class TraefikLoadBalancerForECS extends Construct {
         resources: ["*"],
       })
     );
+  }
+
+  private defaultConfig(props: TraefikConfig) {
+    const region = Stack.of(this).region;
+    return {
+      providers: {
+        ecs: {
+          ecsAnywhere: true,
+          region: region,
+          autoDiscoverClusters: true,
+          exposedByDefault: true,
+        },
+      },
+      api: {
+        dashboard: true,
+        accesslog: true,
+      },
+      http: {
+        routers: {
+          dashboard: {
+            rule: "PathPrefix(`/api`) || PathPrefix(`/dashboard`)",
+            service: "api@internal",
+            middlewares: ["dashboard-access"],
+          },
+        },
+        middlewares: {
+          ["dashboard-access"]: {
+            ipAllowList: {
+              sourceRange: props.dashboardAccessIps ?? [],
+            },
+          },
+        },
+      },
+    };
   }
 }
