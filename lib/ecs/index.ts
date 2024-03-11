@@ -35,7 +35,6 @@ type TraefikConfig = {
    * https://doc.traefik.io/traefik/reference/static-configuration/file/
    */
   config?: any;
-  dashboardAccessIps?: string[];
 };
 
 type TraefikLoadBalancerProps = {
@@ -70,14 +69,6 @@ export class TraefikLoadBalancerForECS extends Construct {
       memoryMiB: props.memoryMiB ?? "512",
       networkMode: props.networkMode ?? NetworkMode.AWS_VPC,
     });
-
-    // const region = Stack.of(this).region;
-    // const taskCommand = [
-    //   "--providers.ecs.ecsAnywhere=true",
-    //   `--providers.ecs.region=${region}`,
-    //   "--providers.ecs.autoDiscoverClusters=true",
-    //   "--providers.ecs.exposedByDefault=true",
-    // ];
 
     const containerImage = this.buildTraefikImage(props.traefik);
     taskDefinition.addContainer("Traefik-" + name, {
@@ -136,7 +127,7 @@ export class TraefikLoadBalancerForECS extends Construct {
   ) {
     const imageName = traefik.traefikImageVersion ?? "traefik:v2.11";
     const meregedConfig = {
-      ...this.defaultConfig(traefik),
+      ...this.staticConfig(traefik),
       ...(traefik.config ?? {}),
     };
 
@@ -145,7 +136,7 @@ export class TraefikLoadBalancerForECS extends Construct {
     writeFileSync(
       dir + "/Dockerfile",
       `FROM ${imageName}
-       COPY traefik.yml /etc/traefik/traefik.yml
+      COPY traefik.yml /etc/traefik/traefik.yml
       `
     );
     return ContainerImage.fromAsset(dir);
@@ -194,9 +185,13 @@ export class TraefikLoadBalancerForECS extends Construct {
     );
   }
 
-  private defaultConfig(props: TraefikConfig) {
+  private staticConfig(props: TraefikConfig) {
     const region = Stack.of(this).region;
     return {
+      global: {
+        checkNewVersion: true,
+        sendAnonymousUsage: true,
+      },
       providers: {
         ecs: {
           ecsAnywhere: true,
@@ -207,23 +202,7 @@ export class TraefikLoadBalancerForECS extends Construct {
       },
       api: {
         dashboard: true,
-        accesslog: true,
-      },
-      http: {
-        routers: {
-          dashboard: {
-            rule: "PathPrefix(`/api`) || PathPrefix(`/dashboard`)",
-            service: "api@internal",
-            middlewares: ["dashboard-access"],
-          },
-        },
-        middlewares: {
-          ["dashboard-access"]: {
-            ipAllowList: {
-              sourceRange: props.dashboardAccessIps ?? [],
-            },
-          },
-        },
+        insecure: false,
       },
     };
   }
