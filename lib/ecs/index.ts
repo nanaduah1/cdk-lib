@@ -7,6 +7,7 @@ import {
   ICluster,
   NetworkMode,
   TaskDefinition,
+  AwsLogDriver,
 } from "aws-cdk-lib/aws-ecs";
 import {
   Effect,
@@ -51,6 +52,8 @@ type TraefikLoadBalancerProps = {
   /** Defaults to AWS_VPC */
   networkMode?: NetworkMode;
   traefik: TraefikConfig;
+  logEnabled?: boolean;
+  logRetention?: RetentionDays;
 };
 
 export class TraefikLoadBalancerForECS extends Construct {
@@ -71,9 +74,18 @@ export class TraefikLoadBalancerForECS extends Construct {
     });
 
     const containerImage = this.buildTraefikImage(props.traefik);
+
+    let logging = undefined;
+    if (props.logEnabled) {
+      logging = new AwsLogDriver({
+        streamPrefix: "buyit-db",
+        logRetention: props.logRetention,
+      });
+    }
     taskDefinition.addContainer("Traefik-" + name, {
       image: containerImage,
       portMappings: [{ containerPort: 80 }, { containerPort: 8080 }],
+      logging,
     });
 
     this.grantTraefikRequiredPermissions(taskDefinition.taskRole);

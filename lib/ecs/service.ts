@@ -24,7 +24,8 @@ export class EcsHttpApiService extends Construct {
       cloudMapOptions: {
         name: props.serviceName,
         containerPort: props.containerPort,
-        cloudMapNamespace: props.cluster.defaultCloudMapNamespace,
+        cloudMapNamespace:
+          props.cloudMapNamespace ?? props.cluster.defaultCloudMapNamespace,
         dnsRecordType: DnsRecordType.SRV,
       },
     });
