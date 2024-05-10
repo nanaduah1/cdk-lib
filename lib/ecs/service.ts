@@ -11,7 +11,7 @@ import { DnsRecordType, INamespace } from "aws-cdk-lib/aws-servicediscovery";
 type EcsHttpApiServiceProps = {
   serviceName: string;
   cluster: ICluster;
-  securityGroup: ISecurityGroup;
+  securityGroup?: ISecurityGroup;
   taskDefinition: TaskDefinition;
   cloudMapNamespace?: INamespace;
   containerPort?: number;
@@ -33,7 +33,7 @@ export class EcsHttpApiService extends Construct {
       serviceName: props.serviceName,
       cluster: props.cluster,
       taskDefinition: props.taskDefinition,
-      securityGroups: [props.securityGroup],
+      securityGroups: props.securityGroup ? [props.securityGroup] : undefined,
       cloudMapOptions: props.cloudMapNamespace ? cloudMapOptions : undefined,
     });
   }
