@@ -54,6 +54,7 @@ type TraefikLoadBalancerProps = {
   traefik: TraefikConfig;
   logEnabled?: boolean;
   logRetention?: RetentionDays;
+  dockerLabels?: { [key: string]: string };
 };
 
 export class TraefikLoadBalancerForECS extends Construct {
@@ -86,6 +87,7 @@ export class TraefikLoadBalancerForECS extends Construct {
       image: containerImage,
       portMappings: [{ containerPort: 80 }, { containerPort: 8080 }],
       logging,
+      dockerLabels: props.dockerLabels,
     });
 
     this.grantTraefikRequiredPermissions(taskDefinition.taskRole);
