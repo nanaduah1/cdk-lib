@@ -17,6 +17,7 @@ type UserAccount = {
 type UserAccountProps = {
   users: UserAccount[];
   userPool: IUserPool;
+  installLatestAwsSdk?: boolean;
 };
 
 export class UserAccounts {
@@ -57,7 +58,7 @@ export class UserAccounts {
           policy: AwsCustomResourcePolicy.fromSdkCalls({
             resources: AwsCustomResourcePolicy.ANY_RESOURCE,
           }),
-          installLatestAwsSdk: true,
+          installLatestAwsSdk: props.installLatestAwsSdk ?? true,
         }
       );
 
@@ -81,7 +82,7 @@ export class UserAccounts {
           policy: AwsCustomResourcePolicy.fromSdkCalls({
             resources: AwsCustomResourcePolicy.ANY_RESOURCE,
           }),
-          installLatestAwsSdk: true,
+          installLatestAwsSdk: props.installLatestAwsSdk ?? true,
         }
       );
       adminSetUserPassword.node.addDependency(createUser);
